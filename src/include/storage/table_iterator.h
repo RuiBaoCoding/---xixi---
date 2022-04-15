@@ -31,6 +31,9 @@ public:
   TableIterator operator++(int);
 
 private:
+  static constexpr Row* INVALID_ROW = nullptr;
+
+private:
   // add your own private member variables here
 };
 

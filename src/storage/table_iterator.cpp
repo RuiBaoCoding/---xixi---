@@ -1,39 +1,24 @@
-#include "common/macros.h"
 #include "storage/table_iterator.h"
+#include "common/macros.h"
 #include "storage/table_heap.h"
 
-TableIterator::TableIterator() {
+TableIterator::TableIterator() {}
 
-}
+TableIterator::TableIterator(const TableIterator &other) {}
 
-TableIterator::TableIterator(const TableIterator &other) {
+TableIterator::~TableIterator() {}
 
-}
+bool TableIterator::operator==(const TableIterator &itr) const { return false; }
 
-TableIterator::~TableIterator() {
-
-}
-
-bool TableIterator::operator==(const TableIterator &itr) const {
-  return false;
-}
-
-bool TableIterator::operator!=(const TableIterator &itr) const {
-  return false;
-}
+bool TableIterator::operator!=(const TableIterator &itr) const { return false; }
 
 const Row &TableIterator::operator*() {
   ASSERT(false, "Not implemented yet.");
+  return *INVALID_ROW;
 }
 
-Row *TableIterator::operator->() {
-  return nullptr;
-}
+Row *TableIterator::operator->() { return nullptr; }
 
-TableIterator &TableIterator::operator++() {
-  return *this;
-}
+TableIterator &TableIterator::operator++() { return *this; }
 
-TableIterator TableIterator::operator++(int) {
-  return TableIterator();
-}
+TableIterator TableIterator::operator++(int) { return TableIterator(); }

@@ -26,8 +26,11 @@ public:
   bool operator!=(const IndexIterator &itr) const;
 
 private:
+  static constexpr MappingType* INVALID_MAPPING_TYPE = nullptr;
+  static constexpr INDEXITERATOR_TYPE* INVALIE_INDEX_ITERATOR = nullptr;
+
+private:
   // add your own private member variables here
 };
-
 
 #endif //MINISQL_INDEX_ITERATOR_H
