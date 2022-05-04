@@ -6,6 +6,13 @@
 #include "common/macros.h"
 #include "common/config.h"
 
+/*
+Bitmap Page Meta包括已经分配的页的数量以及下一个空闲的数据页
+Bitmap Content存
+bytes[]存某一页是否有空余
+bytes中元素为char类型每一个char是两个十六进制数字，能够表示8个数据页的分布情况
+因此表示的信息也是size*8
+*/
 template<size_t PageSize>
 class BitmapPage {
 public:
@@ -42,6 +49,7 @@ private:
 
   /** Note: need to update if modify page structure. */
   static constexpr size_t MAX_CHARS = PageSize - 2 * sizeof(uint32_t);
+  //默认bitmap page meta里存上述两个
 
 private:
   /** The space occupied by all members of the class should be equal to the PageSize */

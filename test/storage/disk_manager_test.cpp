@@ -9,6 +9,8 @@ TEST(DiskManagerTest, BitMapPageTest) {
   memset(buf, 0, size);
   BitmapPage<size> *bitmap = reinterpret_cast<BitmapPage<size> *>(buf);
   auto num_pages = bitmap->GetMaxSupportedSize();
+  //得到能够管理的最多页数
+  //test IsPageFree
   for (uint32_t i = 0; i < num_pages; i++) {
     ASSERT_TRUE(bitmap->IsPageFree(i));
   }
