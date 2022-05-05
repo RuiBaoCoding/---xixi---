@@ -22,9 +22,10 @@ BufferPoolManager::~BufferPoolManager() {
 Page *BufferPoolManager::FetchPage(page_id_t page_id) {
   frame_id_t tmp;
   
-  if(page_table_.find(page_id)!=page_table_.end()){
-    tmp = page_table_.find(page_id)->second;
+  if(page_table_.count(page_id)>0){
+    tmp = page_table_[page_id];
     replacer_->Pin(tmp);//若page_id存在，返回
+    pages_[tmp].pin_count_++;
     return &pages_[tmp];
   }
   if(free_list_.size()>0){//若有空位，找到空闲的位置
@@ -32,20 +33,24 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
     page_table_[page_id] = tmp;//更新page_table_
     free_list_.pop_front();
     disk_manager_->ReadPage(page_id, pages_[tmp].data_);
+    pages_[tmp].pin_count_ = 1;
+    pages_[tmp].page_id_ = page_id;
+    
     return &pages_[tmp];
   }
   else{//从replacer中找
-    bool tr = replacer_->Victim(&tmp);
-    if(tr==false) return nullptr;
+    bool flag = replacer_->Victim(&tmp);
+    if(flag==false) return nullptr;
     if(pages_[tmp].IsDirty()){
       disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
     }
-    pages_[tmp].ResetMemory();
+    // pages_[tmp].ResetMemory();
     pages_[tmp].page_id_ = page_id;
+    pages_[tmp].pin_count_ = 1;
     page_table_[page_id] = tmp;
-    free_list_.remove(tmp);
+    // free_list_.remove(tmp);
     disk_manager_->ReadPage(page_id,pages_[tmp].data_);
-    replacer_->Pin(tmp);
+    // replacer_->Pin(tmp);
     return &pages_[tmp];
   }
   // 1.     Search the page table for the requested page (P).
@@ -59,28 +64,34 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
 }
 
 Page *BufferPoolManager::NewPage(page_id_t &page_id) {
-  page_id = disk_manager_->AllocatePage();
+  page_id = AllocatePage();
   frame_id_t tmp;
   if(free_list_.size()>0){
     tmp = free_list_.front();
     free_list_.pop_front();
-    page_table_[page_id] = tmp;
-    replacer_->Pin(tmp);
-    return &pages_[tmp];
+    // page_table_[page_id] = tmp;
+    // replacer_->Pin(tmp);
+    // return &pages_[tmp];
   }
-  else if(replacer_->Size()==0) return nullptr;
   else{
-    replacer_->Victim(&tmp);
+    bool flag = replacer_->Victim(&tmp);
+    if(flag==false) return nullptr;
     if(pages_[tmp].IsDirty()){
       disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
     }
-    pages_[tmp].ResetMemory();
-    pages_[tmp].page_id_ = page_id;
-    page_table_[page_id] = tmp;
-    free_list_.remove(tmp);
-    replacer_->Pin(tmp);
-    return &pages_[tmp];
+    page_table_.erase(pages_[tmp].page_id_);
+    // pages_[tmp].ResetMemory();
+    // pages_[tmp].page_id_ = page_id;
+    // page_table_[page_id] = tmp;
+    // free_list_.remove(tmp);
+    // replacer_->Pin(tmp);
+    // return &pages_[tmp];
   }
+  pages_[tmp].ResetMemory();
+  pages_[tmp].page_id_ = page_id;
+  pages_[tmp].pin_count_ = 1;
+  page_table_[page_id] = tmp;
+  return &pages_[tmp];
   // 0.   Make sure you call AllocatePage!
   // 1.   If all the pages in the buffer pool are pinned, return nullptr.
   // 2.   Pick a victim page P from either the free list or the replacer. Always pick from the free list first.
@@ -90,19 +101,42 @@ Page *BufferPoolManager::NewPage(page_id_t &page_id) {
 }
 
 bool BufferPoolManager::DeletePage(page_id_t page_id) {
+  // latch_.lock();
+  if(page_table_.count(page_id)==0)return true;
+  frame_id_t tmp = page_table_[page_id];
+  if(pages_[tmp].pin_count_>0)return false;
+  page_table_.erase(page_id);
+  pages_[tmp].ResetMemory();
+  free_list_.push_back(tmp);
+  disk_manager_->DeAllocatePage(page_id);
+  return true;
   // 0.   Make sure you call DeallocatePage!
   // 1.   Search the page table for the requested page (P).
   // 1.   If P does not exist, return true.
   // 2.   If P exists, but has a non-zero pin-count, return false. Someone is using the page.
   // 3.   Otherwise, P can be deleted. Remove P from the page table, reset its metadata and return it to the free list.
-  return false;
+ 
 }
 
 bool BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty) {
-  return false;
+  if(page_table_.count(page_id)==0) return false;
+  frame_id_t tmp = page_table_[page_id];
+  if(pages_[tmp].pin_count_==0) return true;
+  pages_[tmp].pin_count_--;
+  replacer_->Unpin(tmp);
+  if(is_dirty) pages_[tmp].is_dirty_ = true;
+  return true;
 }
 
 bool BufferPoolManager::FlushPage(page_id_t page_id) {
+  latch_.lock();
+  if(page_table_.count(page_id)>0){
+    frame_id_t tmp = page_table_[page_id];
+    disk_manager_->WritePage(page_id, pages_[tmp].data_);
+    latch_.unlock();
+    return true;
+  }
+  latch_.unlock();
   return false;
 }
 
