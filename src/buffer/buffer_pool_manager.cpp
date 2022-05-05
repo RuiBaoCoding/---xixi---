@@ -31,6 +31,8 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
     tmp = free_list_.front();
     page_table_[page_id] = tmp;//更新page_table_
     free_list_.pop_front();
+    disk_manager_->ReadPage(page_id, pages_[tmp].data_);
+    return &pages_[tmp];
   }
   else{//从replacer中找
     bool tr = replacer_->Victim(&tmp);
@@ -38,6 +40,13 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
     if(pages_[tmp].IsDirty()){
       disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
     }
+    pages_[tmp].ResetMemory();
+    pages_[tmp].page_id_ = page_id;
+    page_table_[page_id] = tmp;
+    free_list_.remove(tmp);
+    disk_manager_->ReadPage(page_id,pages_[tmp].data_);
+    replacer_->Pin(tmp);
+    return &pages_[tmp];
   }
   // 1.     Search the page table for the requested page (P).
   // 1.1    If P exists, pin it and return it immediately.
@@ -50,6 +59,28 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
 }
 
 Page *BufferPoolManager::NewPage(page_id_t &page_id) {
+  page_id = disk_manager_->AllocatePage();
+  frame_id_t tmp;
+  if(free_list_.size()>0){
+    tmp = free_list_.front();
+    free_list_.pop_front();
+    page_table_[page_id] = tmp;
+    replacer_->Pin(tmp);
+    return &pages_[tmp];
+  }
+  else if(replacer_->Size()==0) return nullptr;
+  else{
+    replacer_->Victim(&tmp);
+    if(pages_[tmp].IsDirty()){
+      disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
+    }
+    pages_[tmp].ResetMemory();
+    pages_[tmp].page_id_ = page_id;
+    page_table_[page_id] = tmp;
+    free_list_.remove(tmp);
+    replacer_->Pin(tmp);
+    return &pages_[tmp];
+  }
   // 0.   Make sure you call AllocatePage!
   // 1.   If all the pages in the buffer pool are pinned, return nullptr.
   // 2.   Pick a victim page P from either the free list or the replacer. Always pick from the free list first.
