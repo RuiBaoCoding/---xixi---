@@ -7,7 +7,7 @@ BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager
   pages_ = new Page[pool_size_];
   replacer_ = new LRUReplacer(pool_size_);
   for (size_t i = 0; i < pool_size_; i++) {
-    free_list_.emplace_back(i);
+    free_list_.emplace_back(i);//新建page列表，全在free_list_中
   }
 }
 
@@ -20,6 +20,25 @@ BufferPoolManager::~BufferPoolManager() {
 }
 
 Page *BufferPoolManager::FetchPage(page_id_t page_id) {
+  frame_id_t tmp;
+  
+  if(page_table_.find(page_id)!=page_table_.end()){
+    tmp = page_table_.find(page_id)->second;
+    replacer_->Pin(tmp);//若page_id存在，返回
+    return &pages_[tmp];
+  }
+  if(free_list_.size()>0){//若有空位，找到空闲的位置
+    tmp = free_list_.front();
+    page_table_[page_id] = tmp;//更新page_table_
+    free_list_.pop_front();
+  }
+  else{//从replacer中找
+    bool tr = replacer_->Victim(&tmp);
+    if(tr==false) return nullptr;
+    if(pages_[tmp].IsDirty()){
+      disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
+    }
+  }
   // 1.     Search the page table for the requested page (P).
   // 1.1    If P exists, pin it and return it immediately.
   // 1.2    If P does not exist, find a replacement page (R) from either the free list or the replacer.
