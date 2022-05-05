@@ -64,9 +64,10 @@ Page *BufferPoolManager::FetchPage(page_id_t page_id) {
 }
 
 Page *BufferPoolManager::NewPage(page_id_t &page_id) {
-  page_id = AllocatePage();
+  page_id = 0;
   frame_id_t tmp;
   if(free_list_.size()>0){
+    page_id = AllocatePage();
     tmp = free_list_.front();
     free_list_.pop_front();
     // page_table_[page_id] = tmp;
@@ -76,6 +77,7 @@ Page *BufferPoolManager::NewPage(page_id_t &page_id) {
   else{
     bool flag = replacer_->Victim(&tmp);
     if(flag==false) return nullptr;
+    page_id = AllocatePage();
     if(pages_[tmp].IsDirty()){
       disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
     }
