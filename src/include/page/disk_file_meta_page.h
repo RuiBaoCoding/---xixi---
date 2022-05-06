@@ -22,7 +22,7 @@ class DiskFileMetaPage {
  public:
   uint32_t num_allocated_pages_{0};
   uint32_t num_extents_{0};  // each extent consists with a bit map and BIT_MAP_SIZE pages
-  uint32_t extent_used_page_[100];
+  uint32_t extent_used_page_[0];
 };
 
 #endif  // MINISQL_DISK_FILE_META_PAGE_H
