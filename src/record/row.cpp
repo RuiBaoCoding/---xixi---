@@ -14,6 +14,7 @@ uint32_t Row::SerializeTo(char *buf, Schema *schema) const {
 
 uint32_t Row::DeserializeFrom(char *buf, Schema *schema) {
   // replace with your code here
+  
   uint32_t len=schema->GetColumnCount();
   MemHeap *heap = new SimpleMemHeap();
   char *buffer = buf;
