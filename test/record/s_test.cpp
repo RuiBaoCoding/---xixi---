@@ -6,7 +6,7 @@
 #include "record/field.h"
 #include "record/row.h"
 #include "record/schema.h"
-
+#include "record/column.h"
 char *chars[] = {
         const_cast<char *>(""),
         const_cast<char *>("hello"),
@@ -39,7 +39,7 @@ Field null_fields[] = {
 
 TEST(TupleTest, RowTest) {
   SimpleMemHeap heap;
-  TablePage table_page;
+//   TablePage table_page;
   // create schema
   std::vector<Column *> columns = {
           ALLOC_COLUMN(heap)("id", TypeId::kTypeInt, 0, false, false),
@@ -58,17 +58,34 @@ TEST(TupleTest, RowTest) {
   };
   auto schema = std::make_shared<Schema>(columns);
   Row row(fields);
-  char buf[100];
-  uint32_t t = row.SerializeTo(buf,&*schema);
-  for(int i=0;i<int(t);i++)cout<<buf[i];
-  cout<<" "<<t;
+  char buf[100],buf2[100];
+  Column* cc;
+  uint32_t k = columns[0]->SerializeTo(buf);
+  cout<<k<<endl;
+  for(int i=0;i<int(k);i++)
+        printf("%02x",buf[i]);
   cout<<endl;
-  Row row2(fields2);
-  t = row2.GetSerializedSize(&*schema); 
-  row2.DeserializeFrom(buf, &*schema);
-  cout<<t<<endl;
-  t = row2.GetSerializedSize(&*schema);
-  cout<<t<<endl;
-  EXPECT_EQ(CmpBool::kFalse, fields2[0].CompareEquals(*row2.GetField(0)));
-  EXPECT_EQ(CmpBool::kTrue, fields[0].CompareEquals(*row2.GetField(0)));
+  k = cc->DeserializeFrom(buf, cc, &heap);
+  cout<<k<<endl;
+  k = cc->SerializeTo(buf2);
+  cout<<k<<endl;
+  for(int i=0;i<int(k);i++)
+        printf("%02x",buf2[i]);
+  cout<<endl;
+  cout<<columns[0]->GetName()<<endl;
+  cout<<cc->GetName()<<endl;
+  cout<<cc->GetType()<<endl;
+  cout<<cc->GetTableInd()<<endl;
+//   uint32_t t = row.SerializeTo(buf,&*schema);
+//   for(int i=0;i<int(t);i++)cout<<buf[i];
+//   cout<<" "<<t;
+//   cout<<endl;
+//   Row row2(fields2);
+//   t = row2.GetSerializedSize(&*schema); 
+//   row2.DeserializeFrom(buf, &*schema);
+//   cout<<t<<endl;
+//   t = row2.GetSerializedSize(&*schema);
+//   cout<<t<<endl;
+//   EXPECT_EQ(CmpBool::kFalse, fields2[0].CompareEquals(*row2.GetField(0)));
+//   EXPECT_EQ(CmpBool::kTrue, fields[0].CompareEquals(*row2.GetField(0)));
 }
