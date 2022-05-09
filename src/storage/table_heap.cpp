@@ -1,8 +1,8 @@
 #include "storage/table_heap.h"
 
 bool TableHeap::InsertTuple(Row &row, Transaction *txn) {
-  int record_len = row.GetSerializedSize(schema_); //得到row序列化的长度
-  if(record_len>SIZE_MAX_ROW){
+  uint32_t record_len = row.GetSerializedSize(schema_); //得到row序列化的长度
+  if(record_len>TablePage::SIZE_MAX_ROW){
     //极端情况下，只放一条记录（文件头+该记录偏移量+记录长度+记录），也放不下
     return false;
   }
