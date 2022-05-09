@@ -52,6 +52,10 @@ TEST(DiskManagerTest, FreePageAllocationTest) {
   disk_mgr->DeAllocatePage(DiskManager::BITMAP_SIZE);
   disk_mgr->DeAllocatePage(DiskManager::BITMAP_SIZE + 1);
   disk_mgr->DeAllocatePage(DiskManager::BITMAP_SIZE + 2);
+  EXPECT_EQ(true, disk_mgr->IsPageFree(0));
+  EXPECT_EQ(true, disk_mgr->IsPageFree(DiskManager::BITMAP_SIZE + 1));
+  EXPECT_EQ(true, disk_mgr->IsPageFree(DiskManager::BITMAP_SIZE));
+  EXPECT_EQ(false, disk_mgr->IsPageFree(1));
   DiskFileMetaPage *meta_page = reinterpret_cast<DiskFileMetaPage *>(disk_mgr->GetMetaData());
   EXPECT_EQ(extent_nums * DiskManager::BITMAP_SIZE - 5, meta_page->GetAllocatedPages());
   EXPECT_EQ(DiskManager::BITMAP_SIZE - 2, meta_page->GetExtentUsedPage(0));
