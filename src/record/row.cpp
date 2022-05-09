@@ -17,8 +17,10 @@ uint32_t Row::DeserializeFrom(char *buf, Schema *schema) {
   uint32_t len=schema->GetColumnCount();
   MemHeap *heap = new SimpleMemHeap();
   char *buffer = buf;
-  for(int i=0;i<int(len);i++){ 
-    buffer+=fields_[i]->Field::DeserializeFrom(buffer, schema->GetColumn(i)->GetType(), &fields_[i], false, heap);
+  for(int i=0;i<int(len);i++){
+    Field *f; 
+    buffer+=f->Field::DeserializeFrom(buffer, schema->GetColumn(i)->GetType(), &f, false, heap);
+    fields_.push_back(f);
   }
   return buffer-buf;
 }
