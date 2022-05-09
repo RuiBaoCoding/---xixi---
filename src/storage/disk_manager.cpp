@@ -94,10 +94,9 @@ void DiskManager::DeAllocatePage(page_id_t logical_page_id) {
 
 bool DiskManager::IsPageFree(page_id_t logical_page_id) {
   size_t PageNum = BitmapPage<PAGE_SIZE>::GetMaxSupportedSize();
-  uint32_t extent_id =(logical_page_id+1)/PageNum;//计算属于哪个entent
-  //page_id_t physical_page_id = MapPageId(logical_page_id); 
-  char* NotBitMap = NULL;
-  ReadPhysicalPage(PageNum*extent_id+1,NotBitMap);//从磁盘中读出该entent的bitmap
+  uint32_t extent_id =logical_page_id/PageNum;//计算属于哪个entent
+  char NotBitMap[PAGE_SIZE];
+  ReadPhysicalPage((PageNum+1)*extent_id+1,NotBitMap);//从磁盘中读出该entent的bitmap
   //调用BitmapPage类的函数判断该page是否空闲
   return (reinterpret_cast<BitmapPage<PAGE_SIZE>*>(NotBitMap)->IsPageFree(logical_page_id%PageNum));
 }
