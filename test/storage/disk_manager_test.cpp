@@ -52,6 +52,7 @@ TEST(DiskManagerTest, FreePageAllocationTest) {
   disk_mgr->DeAllocatePage(DiskManager::BITMAP_SIZE);
   disk_mgr->DeAllocatePage(DiskManager::BITMAP_SIZE + 1);
   disk_mgr->DeAllocatePage(DiskManager::BITMAP_SIZE + 2);
+
   
   EXPECT_EQ(true, disk_mgr->IsPageFree(0));
   EXPECT_EQ(true, disk_mgr->IsPageFree(DiskManager::BITMAP_SIZE + 1));
