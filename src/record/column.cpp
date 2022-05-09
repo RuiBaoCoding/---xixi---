@@ -1,4 +1,5 @@
 #include "record/column.h"
+#include<iostream>
 Column::Column(std::string column_name, TypeId type, uint32_t index, bool nullable, bool unique)
         : name_(std::move(column_name)), type_(type), table_ind_(index),
           nullable_(nullable), unique_(unique) {
@@ -31,8 +32,9 @@ uint32_t Column::SerializeTo(char *buf) const {
   uint32_t name_len = name_.size();//处理name_
   memcpy(pos, &name_len, sizeof(uint32_t));
   pos+=sizeof(uint32_t);
-  memcpy(pos, &name_, name_len);
-  pos+=name_.size();
+  // memcpy(pos, &name_, name_len);
+  name_.copy(pos, name_len, 0);
+  pos+=name_len;
   uint8_t stype;//处理TypeId type_
   switch(type_){
     case kTypeInvalid: {stype = 0;break;}
@@ -66,7 +68,7 @@ uint32_t Column::DeserializeFrom(char *buf, Column *&column, MemHeap *heap) {
   
   /* deserialize field from buf */
   char* pos = buf;//取出name_
-  int name_len = MACH_READ_UINT32(pos);
+  uint32_t name_len = MACH_READ_UINT32(pos);
   pos+=sizeof(uint32_t);
   std::string column_name;
   column_name.append(pos,name_len);
