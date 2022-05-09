@@ -7,6 +7,9 @@
 #include "transaction/log_manager.h"
 #include "transaction/lock_manager.h"
 
+//不同数据页之间通过双向链表连接
+//RowId记录了该记录所在页，slot_num用于定位记录在该数据页中的下标位置
+
 class TableHeap {
   friend class TableIterator;
 
@@ -48,7 +51,7 @@ public:
    * @param[in] txn Transaction performing the update
    * @return true is update is successful.
    */
-  bool UpdateTuple(const Row &row, const RowId &rid, Transaction *txn);
+  bool UpdateTuple(Row &row, const RowId &rid, Transaction *txn);
 
   /**
    * Called on Commit/Abort to actually delete a tuple or rollback an insert.
