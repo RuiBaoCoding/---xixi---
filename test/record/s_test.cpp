@@ -60,7 +60,7 @@ TEST(TupleTest, RowTest) {
   Row row(fields);
   char buf[100],buf2[100];
   Column* cc;
-  uint32_t k = columns[0]->SerializeTo(buf);
+  uint32_t k = columns[1]->SerializeTo(buf);
   cout<<k<<endl;
   for(int i=0;i<int(k);i++)
         printf("%02x",buf[i]);
@@ -72,7 +72,7 @@ TEST(TupleTest, RowTest) {
   for(int i=0;i<int(k);i++)
         printf("%02x",buf2[i]);
   cout<<endl;
-  cout<<columns[0]->GetName()<<endl;
+  cout<<columns[1]->GetName()<<endl;
   cout<<cc->GetName()<<endl;
   cout<<cc->GetType()<<endl;
   cout<<cc->GetTableInd()<<endl;
