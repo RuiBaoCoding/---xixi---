@@ -1,48 +1,46 @@
 #include "storage/table_heap.h"
 
 bool TableHeap::InsertTuple(Row &row, Transaction *txn) {
-  int record_len = row.GetSerializedSize(schema_); //得到row序列化的长度
-  if(record_len>SIZE_MAX_ROW){
+  uint32_t record_len = row.GetSerializedSize(schema_); //得到row序列化的长度
+  if(record_len>TablePage::SIZE_MAX_ROW){
     //极端情况下，只放一条记录（文件头+该记录偏移量+记录长度+记录），也放不下
     return false;
   }
-  if (first_page_id_==INVALID_PAGE_ID){
+  /*if (first_page_id_==INVALID_PAGE_ID){
     TablePage *First_Page = reinterpret_cast<TablePage *>(buffer_pool_manager_->NewPage(first_page_id_));
     if (First_Page==nullptr) return false;
     buffer_pool_manager_->UnpinPage(first_page_id_,true);//设置为脏页
     First_Page->SetPrevPageId(INVALID_PAGE_ID);
     First_Page->SetNextPageId(INVALID_PAGE_ID);
     First_Page->InsertTuple(row,schema_,txn,lock_manager_,log_manager_);
-  }
-  else{
+  }*/
     //把第一个page读出来
-    TablePage *NowPage = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(first_page_id_));
-    bool flag = false;//flag=true说明需要新建页
-    while(1){//循环找到最近的能放的page
-      if(NowPage->InsertTuple(row,schema_,txn,lock_manager_,log_manager_)){
-        buffer_pool_manager_->UnpinPage(NowPage->GetPageId(),true);//设置为脏页
-        return true;//成功插入
-      }
-      page_id_t NextPageId = NowPage->GetNextPageId();
-      if (NextPageId == INVALID_PAGE_ID){
-        flag=true;//说明找到最后，也没插入成功
-        break;
-      }
-      NowPage = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(NextPageId));
-    }
-    if (flag){
-      int new_page_id = INVALID_PAGE_ID;
+  TablePage *NowPage = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(first_page_id_));
+  bool flag = false;//flag=true说明需要新建页
+  while(1){//循环找到最近的能放的page
+    if(NowPage->InsertTuple(row,schema_,txn,lock_manager_,log_manager_)){
       buffer_pool_manager_->UnpinPage(NowPage->GetPageId(),true);//设置为脏页
-      TablePage *New_Page = reinterpret_cast<TablePage *>(buffer_pool_manager_->NewPage(new_page_id));
-      if (New_Page==nullptr) return false;
-      //完成双向连接
-      buffer_pool_manager_->UnpinPage(New_Page->GetPageId(),true);//设置为脏页
-      New_Page->InsertTuple(row,schema_,txn,lock_manager_,log_manager_);
-      NowPage->SetNextPageId(new_page_id);
-      New_Page->SetPrevPageId(NowPage->GetPageId());
-      New_Page->SetNextPageId(INVALID_PAGE_ID);
-    }        
+      return true;//成功插入
+    }
+    page_id_t NextPageId = NowPage->GetNextPageId();
+    if (NextPageId == INVALID_PAGE_ID){
+      flag=true;//说明找到最后，也没插入成功
+      break;
+    }
+    NowPage = reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(NextPageId));
   }
+  if (flag){
+    int new_page_id = INVALID_PAGE_ID;
+    buffer_pool_manager_->UnpinPage(NowPage->GetPageId(),true);//设置为脏页
+    TablePage *New_Page = reinterpret_cast<TablePage *>(buffer_pool_manager_->NewPage(new_page_id));
+    if (New_Page==nullptr) return false;
+    //完成双向连接
+    New_Page->Init(new_page_id,NowPage->GetPageId(),log_manager_,txn);
+    New_Page->InsertTuple(row,schema_,txn,lock_manager_,log_manager_);
+    buffer_pool_manager_->UnpinPage(New_Page->GetPageId(),true);//设置为脏页
+    NowPage->SetNextPageId(new_page_id);
+    buffer_pool_manager_->UnpinPage(NowPage->GetPageId(),true);//设置为脏页
+  }       
   return true;
 }
 
