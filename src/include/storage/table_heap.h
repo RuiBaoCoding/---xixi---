@@ -124,7 +124,7 @@ private:
             schema_(schema),
             log_manager_(log_manager),
             lock_manager_(lock_manager) {}
-
+  
 private:
   BufferPoolManager *buffer_pool_manager_;
   page_id_t first_page_id_;
