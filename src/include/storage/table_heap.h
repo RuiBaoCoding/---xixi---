@@ -105,7 +105,13 @@ private:
           schema_(schema),
           log_manager_(log_manager),
           lock_manager_(lock_manager) {
-    ASSERT(false, "Not implemented yet.");
+    //ASSERT(false, "Not implemented yet.");
+    //完成第一页的分配
+    TablePage* first_page = reinterpret_cast<TablePage *>(buffer_pool_manager_->NewPage(first_page_id_));
+    //初始化第一页
+    first_page->Init(first_page_id_,INVALID_PAGE_ID,log_manager, txn);
+    //将第一页标记为脏页
+    buffer_pool_manager_->UnpinPage(first_page_id_, true);
   };
 
   /**
@@ -118,7 +124,7 @@ private:
             schema_(schema),
             log_manager_(log_manager),
             lock_manager_(lock_manager) {}
-
+  
 private:
   BufferPoolManager *buffer_pool_manager_;
   page_id_t first_page_id_;
