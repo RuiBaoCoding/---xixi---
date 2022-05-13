@@ -104,7 +104,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
   int s = GetSize();
-  recipient->CopyNFrom(array_+s-int(s/2),int(s/2),buffer_pool_manager);
+  recipient->CopyNFrom(array_+s-int(s/2),int(s/2));
   IncreaseSize(-int(s/2));
 }
 
@@ -114,7 +114,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   for(int i=0;i<size;i++){
-    CopyLastFrom(items[i], buffer_pool_manager);
+    CopyLastFrom(items[i]);
   }
 }
 
@@ -177,7 +177,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
-  recipient->CopyLastFrom(arrray_[0]);
+  recipient->CopyLastFrom(array_[0]);
   for(int i=0;i<GetSize()-1;i++){
     array_[i] = array_[i+1];
   }
