@@ -58,24 +58,23 @@ TEST(TupleTest, RowTest) {
   };
   auto schema = std::make_shared<Schema>(columns);
   Row row(fields);
-  char buf[100],buf2[100];
-  Column* cc;
-  uint32_t k = columns[1]->SerializeTo(buf);
+  char buf[200],buf2[200];
+  std::vector<Column *> col2;
+  Schema sch2(col2);
+  Schema* ptr2sch = &sch2;
+  uint32_t k = schema->SerializeTo(buf);
   cout<<k<<endl;
   for(int i=0;i<int(k);i++)
         printf("%02x",buf[i]);
   cout<<endl;
-  k = cc->DeserializeFrom(buf, cc, &heap);
+  k = sch2.DeserializeFrom(buf, ptr2sch, &heap);
   cout<<k<<endl;
-  k = cc->SerializeTo(buf2);
+  k = ptr2sch->SerializeTo(buf2);
   cout<<k<<endl;
   for(int i=0;i<int(k);i++)
         printf("%02x",buf2[i]);
   cout<<endl;
-  cout<<columns[1]->GetName()<<endl;
-  cout<<cc->GetName()<<endl;
-  cout<<cc->GetType()<<endl;
-  cout<<cc->GetTableInd()<<endl;
+  
 //   uint32_t t = row.SerializeTo(buf,&*schema);
 //   for(int i=0;i<int(t);i++)cout<<buf[i];
 //   cout<<" "<<t;

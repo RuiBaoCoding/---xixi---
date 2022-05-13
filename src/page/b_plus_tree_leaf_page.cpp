@@ -14,7 +14,13 @@
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
-
+  SetSize(0);
+  SetPageId(page_id);
+  SetParentPageId(parent_id);
+  SetMaxSize(max_size);
+  SetPageType(IndexPageType::LEAF_PAGE);
+  SetNextPageId(INVALID_PAGE_ID);
+  SetNextPageId(-1);
 }
 
 /**
@@ -22,12 +28,12 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
  */
 INDEX_TEMPLATE_ARGUMENTS
 page_id_t B_PLUS_TREE_LEAF_PAGE_TYPE::GetNextPageId() const {
-  return INVALID_PAGE_ID;
+  return next_page_id_;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
-
+  next_page_id_ = next_page_id;
 }
 
 /**
@@ -36,7 +42,10 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
-  return 0;
+  for(int i=1;i<GetSize();i++){
+    if(comparator(array_[i].first,key)>=0) return i;
+  }
+  return GetSize();//若不存在比key大的值，返回size_
 }
 
 /*
@@ -46,7 +55,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator
 INDEX_TEMPLATE_ARGUMENTS
 KeyType B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const {
   // replace with your own code
-  KeyType key{};
+  KeyType key = array_[index].first;
   return key;
 }
 
@@ -57,7 +66,7 @@ KeyType B_PLUS_TREE_LEAF_PAGE_TYPE::KeyAt(int index) const {
 INDEX_TEMPLATE_ARGUMENTS
 const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
   // replace with your own code
-  return array_[0];
+  return array_[index];
 }
 
 /*****************************************************************************
@@ -69,8 +78,22 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) {
-  return 0;
-}
+  if(GetSize()==0){
+    array_[0].first = key;
+    array_[0].second = value;
+    IncreaseSize(1);
+    return 1;
+  }
+  int pos = KeyIndex(key, comparator);
+  if(comparator(key, array_[pos].first)==0) return GetSize();
+  for(int i=GetSize();i>pos;i--){
+    array_[i] = array_[i-1];
+  }
+  array_[pos].first = key;
+  array_[pos].second = value;
+  IncreaseSize(1);
+  return GetSize();
+  }
 
 /*****************************************************************************
  * SPLIT
@@ -80,7 +103,9 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
-
+  int s = GetSize();
+  recipient->CopyNFrom(array_+s-int(s/2),int(s/2));
+  IncreaseSize(-int(s/2));
 }
 
 /*
@@ -88,7 +113,9 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
-
+  for(int i=0;i<size;i++){
+    CopyLastFrom(items[i]);
+  }
 }
 
 /*****************************************************************************
@@ -101,6 +128,11 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType &value, const KeyComparator &comparator) const {
+  int pos = KeyIndex(key, comparator);
+  if(comparator(array_[pos].first, key)==0){
+    value = array_[pos].second;
+    return true;
+  }
   return false;
 }
 
@@ -115,7 +147,11 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType &value, co
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
-  return 0;
+  int pos = KeyIndex(key, comparator);
+  if(comparator(key, array_[pos].first)!=0) return GetSize();
+  for(int i=pos;i<GetSize()-1;i++) array_[i] = array_[i+1];
+  IncreaseSize(-1);//Remove之后size--
+  return GetSize();
 }
 
 /*****************************************************************************
@@ -127,7 +163,9 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const 
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
-
+  recipient->SetNextPageId(GetNextPageId());
+  recipient->CopyNFrom(array_,GetSize());
+  SetSize(0);
 }
 
 /*****************************************************************************
@@ -139,7 +177,11 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveAllTo(BPlusTreeLeafPage *recipient) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) {
-
+  recipient->CopyLastFrom(array_[0]);
+  for(int i=0;i<GetSize()-1;i++){
+    array_[i] = array_[i+1];
+  }
+  IncreaseSize(-1);
 }
 
 /*
@@ -147,6 +189,9 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeLeafPage *recipient) 
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyLastFrom(const MappingType &item) {
+  array_[GetSize()].first = item.first;
+  array_[GetSize()].second = item.second;
+  IncreaseSize(1);
 
 }
 
@@ -155,7 +200,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyLastFrom(const MappingType &item) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient) {
-
+  recipient->CopyFirstFrom(array_[GetSize()-1]);
+  IncreaseSize(-1);
 }
 
 /*
@@ -164,7 +210,10 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient)
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyFirstFrom(const MappingType &item) {
-
+  for(int i = GetSize();i>0;i++){array_[i] = array_[i-1];}
+  array_[0].first = item.first;
+  array_[0].second = item.second;
+  IncreaseSize(1);
 }
 
 template
