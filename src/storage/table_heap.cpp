@@ -75,7 +75,6 @@ bool TableHeap::UpdateTuple(Row &row, const RowId &rid, Transaction *txn) {
     if(slot_num>=page->GetTupleCount() || TablePage::IsDeleted(tuple_size)){
       buffer_pool_manager_->UnpinPage(page->GetTablePageId(), false);
       return false;
-
     }else{//因为空间不足导致插入失败
       //page_id_t next_page_id=page->GetNextPageId();
       //auto next_page=reinterpret_cast<TablePage *>(buffer_pool_manager_->FetchPage(next_page_id));
@@ -83,9 +82,9 @@ bool TableHeap::UpdateTuple(Row &row, const RowId &rid, Transaction *txn) {
       isInsert=InsertTuple(row,txn);//判断有没有成功插入
       ASSERT(row.GetRowId().GetPageId()!=INVALID_PAGE_ID, "cuocuocuo OutPage!!!");
       //当前无法插入可以直接调用插入函数插到别的地方，但同时rid会被修改，所以更改了参数类型
-      /*if(isInsert)
+      if(isInsert)
         MarkDelete(rid,txn);//将旧记录处标记为删除
-      buffer_pool_manager_->UnpinPage(page->GetTablePageId(), isInsert);*/
+      buffer_pool_manager_->UnpinPage(page->GetTablePageId(), isInsert);
       return isInsert;
     }
   }
