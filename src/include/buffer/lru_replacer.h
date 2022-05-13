@@ -40,7 +40,6 @@ public:
 private:
   // add your own private member variables here
   size_t capacity;//可以放置的最大容量
-  mutex latch;//互斥锁
   list <frame_id_t> lru_list_;//存放能够被移出的frame_id
   std::unordered_map <frame_id_t,list<frame_id_t>::iterator> lru_hash;//哈希表
 };

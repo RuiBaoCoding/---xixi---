@@ -11,7 +11,6 @@ LRUReplacer::~LRUReplacer() = default;
 bool LRUReplacer::Victim(frame_id_t *frame_id) {
   //返回最近最少被访问的页的页帧号，返回true
   //当前没有可以替换的返回false
-  scoped_lock lock{latch};//保证线程安全,防止死锁
   if(lru_list_.size()==0){
     return false; //空了返回false
   }else{
@@ -27,8 +26,6 @@ bool LRUReplacer::Victim(frame_id_t *frame_id) {
 //如果数据已经不在了，那么Pin和Unpin都不起作用了
 
 void LRUReplacer::Pin(frame_id_t frame_id) {
-  scoped_lock lock{latch};//保证线程安全,防止死锁
-
   if(lru_hash.count(frame_id)){//在里面
     auto p=lru_hash[frame_id];//取出迭代器
     lru_hash.erase(frame_id);//删除映射关系
@@ -40,8 +37,6 @@ void LRUReplacer::Pin(frame_id_t frame_id) {
 }
 
 void LRUReplacer::Unpin(frame_id_t frame_id) {
-  scoped_lock lock{latch};//保证线程安全,防止死锁
-  
   //解锁，并放到lru_list_中
   if(lru_hash.count(frame_id)){//已经存在
     return;
