@@ -41,7 +41,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
   // return 0;
-  for(int i=0;i<=GetSize();i++){
+  for(int i=0;i<GetSize();i++){ //应该是<GetSize
     if(ValueAt(i) == value) return i;
   }
   return -1;
@@ -68,22 +68,27 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const {
  */
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator) const {
+  //找包含key的页
   // replace with your own code
   int s = GetSize();
-  if(s==1) return 0;
-  if(comparator(key, array_[1].first)<0) return 0;
+  //std::cout<<"s: "<<s<<std::endl;
+  //if(s==1) return 0;
+  //比第一个小就在第0个结点
+  if(comparator(key, array_[1].first)<0) return array_[0].second;
   int left = 1, right = s;//二分法搜索key,实际范围为1到(s-1)
-  while(left<right-1){
+  while(left<right){
     int mid = (left+right)/2;
     int t = comparator(key, array_[mid].first);
-    switch(t){
-      case -1: {right = mid; break;}
-      case 0: {return array_[mid].second;}
-      case 1: {left = mid; break;}
-      default:break;
+    if(t<=0){
+      right = mid;
+    }else{
+      left=mid+1;
     }
+    cout<<"left: "<<left<<endl;
+    cout<<"right: "<<right<<endl;
   }
-  return array_[left].second;
+  return array_[right].second;
+  //不考虑找不到的情况
 }
 
 /*****************************************************************************
@@ -171,7 +176,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Remove(int index) {
 INDEX_TEMPLATE_ARGUMENTS
 ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() {
   // replace with your own code
-  if(GetSize()!=1) return -1;
+  //if(GetSize()!=1) return -1;
   ValueType val = ValueAt(0);
   Remove(0);
   return val;
@@ -227,6 +232,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *rec
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, BufferPoolManager *buffer_pool_manager) {
   Page* p = buffer_pool_manager->FetchPage(pair.second);
+  //找到这个pair所在页
   BPlusTreePage *bp = reinterpret_cast<BPlusTreePage*>(p->GetData());
   bp->SetParentPageId(GetPageId());
   buffer_pool_manager->UnpinPage(pair.second, true);
@@ -263,7 +269,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, Buff
     array_[i] = array_[i-1];
   }
   array_[0] = pair;
-  array_[1].first = pair.first;
+  //array_[1].first = pair.first;
   IncreaseSize(1);
 }
 

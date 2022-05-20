@@ -20,7 +20,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, in
   SetMaxSize(max_size);
   SetPageType(IndexPageType::LEAF_PAGE);
   SetNextPageId(INVALID_PAGE_ID);
-  SetNextPageId(-1);
+  //SetNextPageId(-1);
 }
 
 /**
@@ -42,12 +42,31 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
-  for(int i=1;i<GetSize();i++){
+  int s = GetSize();
+  std::cout<<"s: "<<s<<std::endl;
+  //if(s==1) return 0;
+  //比第一个小就在第0个结点
+  int left = 0, right = s;//二分法搜索key,实际范围为0到(s-1)
+  while(left<right){
+    int mid = (left+right)/2;
+    int t = comparator(key, array_[mid].first);
+    if(t<=0){
+      right = mid;
+    }else{
+      left=mid+1;
+    }
+    cout<<"left: "<<left<<endl;
+    cout<<"right: "<<right<<endl;
+  }
+  return right;
+  //在叶结点中查找key，返回index（如果找不着就返回GetSize()）
+  //return array_[left].second;
+  
+  /*for(int i=1;i<GetSize();i++){
     if(comparator(array_[i].first,key)>=0) return i;
   }
-  return GetSize();//若不存在比key大的值，返回size_
+  return GetSize();*///若不存在比key大的值，返回size_
 }
-
 /*
  * Helper method to find and return the key associated with input "index"(a.k.a
  * array offset)
@@ -79,13 +98,16 @@ const MappingType &B_PLUS_TREE_LEAF_PAGE_TYPE::GetItem(int index) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator) {
   if(GetSize()==0){
+    cout<<"size=0"<<endl;
     array_[0].first = key;
     array_[0].second = value;
     IncreaseSize(1);
     return 1;
   }
+  //查找第一个大于等于key的值
   int pos = KeyIndex(key, comparator);
-  if(comparator(key, array_[pos].first)==0) return GetSize();
+  std::cout<<"pos: "<<pos<<std::endl;
+  if(pos!=GetSize() && comparator(key, array_[pos].first)==0) return GetSize();
   for(int i=GetSize();i>pos;i--){
     array_[i] = array_[i-1];
   }
@@ -93,7 +115,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   array_[pos].second = value;
   IncreaseSize(1);
   return GetSize();
-  }
+}
 
 /*****************************************************************************
  * SPLIT
@@ -129,7 +151,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType &value, const KeyComparator &comparator) const {
   int pos = KeyIndex(key, comparator);
-  if(comparator(array_[pos].first, key)==0){
+  if(pos!=GetSize() && comparator(array_[pos].first, key)==0){
     value = array_[pos].second;
     return true;
   }
@@ -148,7 +170,7 @@ bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType &value, co
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator) {
   int pos = KeyIndex(key, comparator);
-  if(comparator(key, array_[pos].first)!=0) return GetSize();
+  if(pos==GetSize() || comparator(key, array_[pos].first)!=0) return GetSize();
   for(int i=pos;i<GetSize()-1;i++) array_[i] = array_[i+1];
   IncreaseSize(-1);//Remove之后size--
   return GetSize();
