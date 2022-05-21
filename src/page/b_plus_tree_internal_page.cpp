@@ -17,7 +17,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetParentPageId(parent_id);
   SetMaxSize(max_size);
   SetPageType(IndexPageType::INTERNAL_PAGE);
-}//初始化
+}//初�?�化
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
  * array offset)
@@ -31,6 +31,7 @@ KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
+  cout<<"index: "<<index<<endl;
   array_[index].first = key;
 }
 
@@ -41,7 +42,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
   // return 0;
-  for(int i=0;i<GetSize();i++){ //应该是<GetSize
+  for(int i=0;i<GetSize();i++){ //应�?�是<GetSize
     if(ValueAt(i) == value) return i;
   }
   return -1;
@@ -71,11 +72,18 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
   //找包含key的页
   // replace with your own code
   int s = GetSize();
+  int i = 1;
+  for (; i< s; i++ ){
+    if (comparator(array_[i].first,key)>0){
+      break;
+    }
+  }
+  return array_[i-1].second; 
   //std::cout<<"s: "<<s<<std::endl;
   //if(s==1) return 0;
-  //比第一个小就在第0个结点
-  if(comparator(key, array_[1].first)<0) return array_[0].second;
-  int left = 1, right = s;//二分法搜索key,实际范围为1到(s-1)
+  //比�??一�?小就在�??0�?结点
+  /*if(comparator(key, array_[1].first)<0) return array_[0].second;
+  int left = 1, right = s;//二分法搜�?key,实际范围�?1�?(s-1)
   while(left<right){
     int mid = (left+right)/2;
     int t = comparator(key, array_[mid].first);
@@ -84,10 +92,10 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
     }else{
       left=mid+1;
     }
-    cout<<"left: "<<left<<endl;
-    cout<<"right: "<<right<<endl;
+    //cout<<"left: "<<left<<endl;
+    //cout<<"right: "<<right<<endl;
   }
-  return array_[right].second;
+  return array_[right-1].second;*/
   //不考虑找不到的情况
 }
 

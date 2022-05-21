@@ -119,20 +119,22 @@ INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) {
   //找到应该插到哪个叶结点中
   //debug
+  /*
   Page* root0_page=buffer_pool_manager_->FetchPage(root_page_id_);
   //函数里不会对任何页做修改，安全起见每次Fetch之后都Unpin一次
   buffer_pool_manager_->UnpinPage(root_page_id_,false);
   BPlusTreePage* root0_node=reinterpret_cast<BPlusTreePage*>(root0_page->GetData());
-  cout<<"root size 0: "<<root0_node->GetSize()<<endl;
+  cout<<"root size 0: "<<root0_node->GetSize()<<endl;*/
   //////////////
   Page *page = FindLeafPage(key);
 
   //debug
+  /*
   Page* root_page=buffer_pool_manager_->FetchPage(root_page_id_);
   //函数里不会对任何页做修改，安全起见每次Fetch之后都Unpin一次
   buffer_pool_manager_->UnpinPage(root_page_id_,false);
   BPlusTreePage* root_node=reinterpret_cast<BPlusTreePage*>(root_page->GetData());
-  cout<<"root size 1: "<<root_node->GetSize()<<endl;
+  cout<<"root size 1: "<<root_node->GetSize()<<endl;*/
   //////////////
 
   cout<<"already find leafpage"<<endl;
@@ -142,10 +144,11 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   int insert_size = leaf_page->Insert(key,value,comparator_);
 
   //debug
+  /*
   Page* root1_page=buffer_pool_manager_->FetchPage(root_page_id_);
   buffer_pool_manager_->UnpinPage(root_page_id_,false);
   BPlusTreePage* root1_node=reinterpret_cast<BPlusTreePage*>(root1_page->GetData());
-  cout<<"root size 2: "<<root1_node->GetSize()<<endl;
+  cout<<"root size 2: "<<root1_node->GetSize()<<endl;*/
   //////////////////
 
   cout<<"already insert"<<endl;
@@ -157,7 +160,6 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     //需要分裂
     LeafPage* NewPage = Split(leaf_page);
     //cout<<"already split"<<endl;
-    //不太知道为什么InsertIntoParent里面key的含义，为什么是取新页的首元素？
     InsertIntoParent(leaf_page,NewPage->KeyAt(0),NewPage,transaction);
     //cout<<"already insert into parent"<<endl;
     buffer_pool_manager_->UnpinPage(page->GetPageId(),true);//unpin且设为脏页
@@ -169,10 +171,11 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     buffer_pool_manager_->UnpinPage(page->GetPageId(),true);//unpin且设为脏页
     
     //debug
+    /*
     Page* root3_page=buffer_pool_manager_->FetchPage(root_page_id_);
     buffer_pool_manager_->UnpinPage(root_page_id_,false);
-    BPlusTreePage* root3_node=reinterpret_cast<BPlusTreePage*>(root1_page->GetData());
-    cout<<"root size 3: "<<root1_node->GetSize()<<endl;
+    BPlusTreePage* root3_node=reinterpret_cast<BPlusTreePage*>(root3_page->GetData());
+    cout<<"root size 3: "<<root3_node->GetSize()<<endl;*/
     /////////////////
   }
   return true;//插入成功
@@ -276,6 +279,8 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     else{//父节点也满了
       //父节点分裂产生新的结点split_new_page
       InternalPage *spilt_new_page = Split(parent_page);
+      old_node->SetParentPageId(spilt_new_page->GetPageId());
+      new_node->SetParentPageId(spilt_new_page->GetPageId());
       //递归地将父节点和父节点分裂产生的新结点插到父节点的父节点中
       KeyType new_key = spilt_new_page->KeyAt(0);
       InsertIntoParent(parent_page,new_key,spilt_new_page,transaction);
@@ -306,11 +311,14 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   }else{
     //找到相应的叶结点
     Page* leaf_page=FindLeafPage(key);
+    ASSERT(leaf_page!=nullptr,"leaf_page is null");
     LeafPage* leaf_node=reinterpret_cast<LeafPage*>(leaf_page->GetData());
     //由于删除函数的返回值为size，所以我们只能通过size大小判断是否删除成功
     int size_before_delete=leaf_node->GetSize();
     int size_after_delete=leaf_node->RemoveAndDeleteRecord(key,comparator_);
+    cout<<"already removed a record."<<endl;
     if(size_after_delete<size_before_delete){
+      cout<<"S delete"<<endl;
       //成功删除
       //Unpin一个页
       buffer_pool_manager_->UnpinPage(leaf_node->GetPageId(),true);
@@ -319,7 +327,9 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
       ShouldDelete=CoalesceOrRedistribute(leaf_node,nullptr);
       if(ShouldDelete==true){
         //该叶结点需要被删掉
-        buffer_pool_manager_->DeletePage(leaf_node->GetPageId());
+        cout<<"should delete"<<endl;
+        buffer_pool_manager_->DeletePage(leaf_page->GetPageId());
+        cout<<"leaf_node: "<<leaf_node->GetPageId()<<endl;
       }
     }else{
       //删除失败
@@ -345,23 +355,27 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
   //否则都合并到兄弟结点后将当前结点删除
   if(node->IsRootPage()){
     //根结点
+    cout<<"In CoalorRedis: is root."<<endl;
     bool ShoulDelete;
     ShoulDelete=AdjustRoot(node);
     return ShoulDelete;
   }else{
     //中间结点或叶结点
+    cout<<"In CoalorRedis: isn't root."<<endl;
     if(node->GetSize()>=node->GetMinSize()){
       //不需要调整
       return false;
     }else{
       //需要判断是否为第一个结点，是不是第一个会影响兄弟结点的下标
       Page* parent_page=buffer_pool_manager_->FetchPage(node->GetParentPageId());
+      ASSERT(parent_page!=nullptr,"parent_page is null!");
       InternalPage* parent_node=reinterpret_cast<InternalPage*>(parent_page->GetData());
       //获得当前结点的下标,value的值其实就是page_id
       int node_index=parent_node->ValueIndex(node->GetPageId());
       int sibling_index;
       if(node_index==0){
         //第一个孩子
+        cout<<"is the first child"<<endl;
         sibling_index=1;
       }else{
         sibling_index=node_index-1;
@@ -369,20 +383,25 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
       //寻找兄弟结点
       page_id_t sibling_page_id=parent_node->ValueAt(sibling_index);
       Page* sibling_page=buffer_pool_manager_->FetchPage(sibling_page_id);
+      ASSERT(sibling_page!=nullptr,"sibling page is null!");
       N* sibling_node=reinterpret_cast<N*>(sibling_page->GetData());
       //判断要执行的操作是重新分配还是合并
       //约定大于Maxsize才分裂
       //大于等于Maxsize的时候可以通过重分配来解决
       if(sibling_node->GetSize()+node->GetSize()>=node->GetMaxSize()){
         //重新分配sibling和当前
+        cout<<"use redistrubute"<<endl;
+        //传的index是当前结点的index
         Redistribute(sibling_node,node,node_index);
         buffer_pool_manager_->UnpinPage(parent_node->GetPageId(),true);
         buffer_pool_manager_->UnpinPage(sibling_node->GetPageId(),true);
         return false;//不需要删除
       }else{
+        cout<<"use coalesce"<<endl;
         bool ParentShouldDelete;
         ParentShouldDelete=Coalesce(&sibling_node,&node,&parent_node,node_index,nullptr);
         if(ParentShouldDelete==true){
+          cout<<"should delete parent"<<endl;
           buffer_pool_manager_->UnpinPage(parent_node->GetPageId(),true);
           buffer_pool_manager_->DeletePage(parent_node->GetPageId());
         }
@@ -414,20 +433,25 @@ bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
                               Transaction *transaction) {
   if (index == 0){//此时neighbor_node在node的后面，需要交换
     //交换neighbor_node和node
+    cout<<"In Coalesce: is first child"<<endl;
+    
     N **temp = neighbor_node;
     neighbor_node = node;
     node = temp;
+    //std::swap(neighbor_node,node);
     //此时兄弟结点的index为1
     index ++ ;
   }
   //由于中间节点和叶结点要调不同的子函数来处理，故需要先判断一下结点类型
   bool is_leaf = (*node)->IsLeafPage();
   if (is_leaf){
+    cout<<"In Coalesce: is leaf"<<endl;
     LeafPage *BefLeaf = reinterpret_cast<LeafPage *>(*neighbor_node);
     LeafPage *RearLeaf = reinterpret_cast<LeafPage *>(*node);
     RearLeaf->MoveAllTo(BefLeaf);
   }
   else{
+    cout<<"In Coalesce: is internal node"<<endl;
     InternalPage *BefPage = reinterpret_cast<InternalPage *>(*neighbor_node);
     InternalPage *RearPage = reinterpret_cast<InternalPage *>(*node);
     RearPage->MoveAllTo(BefPage,(*parent)->KeyAt(index),buffer_pool_manager_);
@@ -457,10 +481,14 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
     LeafPage* leaf = reinterpret_cast<LeafPage *>(node);
     //由于从兄弟借之后，会影响父节点的内容
     //需要取父节点
+    ASSERT(neighbor_leaf!=nullptr,"In Redistribute: neighbor leaf is null!");
+    ASSERT(leaf!=nullptr,"In Redistribute: leaf is null!");
     page_id_t parent_page_id = leaf->GetParentPageId();
     Page* page = buffer_pool_manager_->FetchPage(parent_page_id);
     InternalPage* parent_page = reinterpret_cast<InternalPage *>(page->GetData());
+    ASSERT(parent_page!=nullptr,"In Redistribute: parent_page is null!");
     if (index == 0){
+      //这时neighbor_node在node的后面
       //这时候(node,neighbor_node)
       //把neighbor_node的第一对key&value放到node的最后
       neighbor_leaf->MoveFirstToEndOf(leaf);
@@ -471,12 +499,17 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
       buffer_pool_manager_->UnpinPage(parent_page_id,true);
     }
     else{
+      cout<<"In Redistribute: not the first node"<<endl;
       //这时候(neighbor_node,node)
       //把neighbor_node的最后一对key&value放到node的前面
+      ASSERT(neighbor_leaf!=nullptr,"In Redistribute 1: neighbor leaf is null!");
+      ASSERT(leaf!=nullptr,"In Redistribute 1: leaf is null!");
       neighbor_leaf->MoveLastToFrontOf(leaf);
       //父节点的第index-1个孩子是neighbor_node，第index个孩子是node
       //       第index-1个key    不变        ，第index个key 是node中最小的
-      parent_page->SetKeyAt(index,node->KeyAt(0));
+      ASSERT(parent_page!=nullptr,"In Redistribute 1: parent_page is null!");
+      cout<<"In Redistribute: index is"<<index<<endl;
+      parent_page->SetKeyAt(index,leaf->KeyAt(0));
       //unpin父页并设为脏页
       buffer_pool_manager_->UnpinPage(parent_page_id,true);
     }
@@ -534,11 +567,13 @@ bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
   //在case1的情况下，root是内部结点；case2的情况下，root是叶结点
   if(old_root_node->IsLeafPage() && old_root_node->GetSize()==0){
     //case2 删除这棵树
+    cout<<"case 2"<<endl;
     root_page_id_=INVALID_PAGE_ID;
     UpdateRootPageId(0);
     return true;
   }else if(!old_root_node->IsLeafPage() && old_root_node->GetSize()==1){
     //case1 让孩子成为新的root
+    cout<<"case 1"<<endl;
     InternalPage* old_root=reinterpret_cast<InternalPage*>(old_root_node);
     page_id_t child_page_id;
     child_page_id=old_root->RemoveAndReturnOnlyChild();
@@ -552,6 +587,7 @@ bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
     buffer_pool_manager_->UnpinPage(child_page_id,true);
     return true;
   }else{
+    cout<<"case 3"<<endl;
     //不需要删除根结点
     return false;
   }
@@ -608,6 +644,8 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
   //函数里不会对任何页做修改，安全起见每次Fetch之后都Unpin一次
   buffer_pool_manager_->UnpinPage(root_page_id_,false);
   BPlusTreePage* curr_node=reinterpret_cast<BPlusTreePage*>(curr_page->GetData());
+  ///debug//////
+  cout<<"root size in find:"<<curr_node->GetSize()<<endl;
   //循环找
   while(!curr_node->IsLeafPage()){
     //debug
@@ -628,6 +666,7 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
       child_page_id=internal_node->Lookup(key,comparator_);
     }
     Page* child_page=buffer_pool_manager_->FetchPage(child_page_id);
+    ASSERT(child_page!=nullptr,"child page is null!");
     BPlusTreePage* child_node=reinterpret_cast<BPlusTreePage*>(child_page->GetData());
     buffer_pool_manager_->UnpinPage(child_page_id,false);
     //交换

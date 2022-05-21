@@ -43,10 +43,17 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
   int s = GetSize();
-  std::cout<<"s: "<<s<<std::endl;
+  //std::cout<<"s: "<<s<<std::endl;
   //if(s==1) return 0;
   //比第一个小就在第0个结点
-  int left = 0, right = s;//二分法搜索key,实际范围为0到(s-1)
+  int i = 0;
+  for ( ; i < s ; i ++ ){
+    if (comparator(array_[i].first,key)>=0){
+      break;
+    }
+  }
+  return i;
+  /*int left = 0, right = s;//二分法搜索key,实际范围为0到(s-1)
   while(left<right){
     int mid = (left+right)/2;
     int t = comparator(key, array_[mid].first);
@@ -55,10 +62,10 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator
     }else{
       left=mid+1;
     }
-    cout<<"left: "<<left<<endl;
-    cout<<"right: "<<right<<endl;
+    //cout<<"left: "<<left<<endl;
+    //cout<<"right: "<<right<<endl;
   }
-  return right;
+  return right;*/
   //在叶结点中查找key，返回index（如果找不着就返回GetSize()）
   //return array_[left].second;
   
@@ -222,6 +229,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyLastFrom(const MappingType &item) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient) {
+  ASSERT(recipient!=nullptr,"recipient is null!");
+  cout<<"In MoveLtoFront."<<endl;
   recipient->CopyFirstFrom(array_[GetSize()-1]);
   IncreaseSize(-1);
 }
@@ -232,7 +241,8 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeLeafPage *recipient)
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyFirstFrom(const MappingType &item) {
-  for(int i = GetSize();i>0;i++){array_[i] = array_[i-1];}
+  cout<<"In CopyFirstFrom."<<endl;
+  for(int i = GetSize();i>0;i--){array_[i] = array_[i-1];}
   array_[0].first = item.first;
   array_[0].second = item.second;
   IncreaseSize(1);
