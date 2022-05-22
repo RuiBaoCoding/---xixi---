@@ -51,7 +51,7 @@ public:
   INDEXITERATOR_TYPE End();
 
   // expose for test purpose
-  Page *FindLeafPage(const KeyType &key, bool leftMost = false);
+  Page *FindLeafPage(const KeyType &key, bool leftMost = false,bool rightMost=false);
 
   // used to check whether all pages are unpinned
   bool Check();
@@ -69,7 +69,29 @@ public:
     ToGraph(node, buffer_pool_manager_, out);
     out << "}" << std::endl;
   }
-
+  void Print(page_id_t page_id) const{
+    Page *page = buffer_pool_manager_->FetchPage(page_id);
+    BPlusTreePage *treepage = reinterpret_cast<BPlusTreePage *>(page->GetData());
+    if (treepage->IsLeafPage()){
+      cout<<"leaf_page: "<<page_id<<"  ";
+      LeafPage* leafpage = reinterpret_cast<LeafPage *>(treepage);
+      for ( int i = 0 ; i < leafpage->GetSize() ; i ++ ){
+        cout<<leafpage->array_[i].first<<" ";
+      }
+      cout<<"   parent_page_id: "<<leafpage->GetParentPageId();
+      cout<<endl;
+    }
+    else{
+      cout<<"internal_page: "<<page_id<<"  ";
+      InternalPage* interalpage = reinterpret_cast<InternalPage *>(treepage);
+      for ( int i = 0 ; i < interalpage->GetSize() ; i ++ ){
+        cout<<interalpage->array_[i].first<<" "<<interalpage->array_[i].second<<"   ";
+      }
+      cout<<"   parent_page_id: "<<interalpage->GetParentPageId();
+      cout<<endl;
+    }
+    buffer_pool_manager_->UnpinPage(page_id,false);
+  }
 private:
   void StartNewTree(const KeyType &key, const ValueType &value);
 

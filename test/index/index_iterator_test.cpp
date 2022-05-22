@@ -27,6 +27,7 @@ TEST(BPlusTreeTests, IndexIteratorTest) {
     ASSERT_EQ(i * 100, v[v.size() - 1]);
   }
   // Iterator
+  //cout<<"-------------------------------------"<<endl;
   int ans = 1;
   for (auto iter = tree.Begin(); iter != tree.End(); ++iter, ans += 2) {
     EXPECT_EQ(ans, (*iter).first);

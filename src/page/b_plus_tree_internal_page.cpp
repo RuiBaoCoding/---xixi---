@@ -17,7 +17,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id
   SetParentPageId(parent_id);
   SetMaxSize(max_size);
   SetPageType(IndexPageType::INTERNAL_PAGE);
-}//初�?�化
+}//初�?�化
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
  * array offset)
@@ -31,7 +31,7 @@ KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const {
 
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
-  cout<<"index: "<<index<<endl;
+  //cout<<"index: "<<index<<endl;
   array_[index].first = key;
 }
 
@@ -42,7 +42,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
   // return 0;
-  for(int i=0;i<GetSize();i++){ //应�?�是<GetSize
+  for(int i=0;i<GetSize();i++){ //应�?�是<GetSize
     if(ValueAt(i) == value) return i;
   }
   return -1;
@@ -81,9 +81,9 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyCo
   return array_[i-1].second; 
   //std::cout<<"s: "<<s<<std::endl;
   //if(s==1) return 0;
-  //比�??一�?小就在�??0�?结点
+  //比�??一�??小就�?�???0�??结点
   /*if(comparator(key, array_[1].first)<0) return array_[0].second;
-  int left = 1, right = s;//二分法搜�?key,实际范围�?1�?(s-1)
+  int left = 1, right = s;//二分法搜�??key,实际范围�??1�??(s-1)
   while(left<right){
     int mid = (left+right)/2;
     int t = comparator(key, array_[mid].first);
@@ -279,6 +279,17 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyFirstFrom(const MappingType &pair, Buff
   array_[0] = pair;
   //array_[1].first = pair.first;
   IncreaseSize(1);
+}
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
+                                               BufferPoolManager *buffer_pool_manager){
+  ASSERT(recipient!=nullptr,"recipient is null!");
+  recipient->array_[0].first=middle_key;
+  for(int i=GetSize()-1;i>=0;i--){
+    recipient->CopyFirstFrom(array_[i],buffer_pool_manager);
+  }
+  IncreaseSize(-GetSize());
 }
 
 template

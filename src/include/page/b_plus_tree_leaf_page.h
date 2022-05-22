@@ -38,21 +38,30 @@ public:
   void Init(page_id_t page_id, page_id_t parent_id = INVALID_PAGE_ID, int max_size = LEAF_PAGE_SIZE);
 
   // helper methods
+  //返回该叶结点的page_id_
   page_id_t GetNextPageId() const;
-
+  
+  //set该叶结点的next_page_id_
   void SetNextPageId(page_id_t next_page_id);
 
+  //给index，找key
   KeyType KeyAt(int index) const;
 
+  //找到第一个>=key的位置（index）
+  //只有generating index iterator时用
   int KeyIndex(const KeyType &key, const KeyComparator &comparator) const;
 
+  //给index，返回（key，value）
   const MappingType &GetItem(int index);
 
   // insert and delete methods
+  //向叶结点中插入（key,value)，返回size
   int Insert(const KeyType &key, const ValueType &value, const KeyComparator &comparator);
 
+  //在叶结点中查找（key，value），找到返回true，找不到返回false
   bool Lookup(const KeyType &key, ValueType &value, const KeyComparator &comparator) const;
 
+  //删除一个key，返回size（如果找不到就不作操作，返回当前size）
   int RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator);
 
   // Split and Merge utility methods
@@ -64,6 +73,10 @@ public:
 
   void MoveLastToFrontOf(BPlusTreeLeafPage *recipient);
 
+  void MoveAllToFrontOf(BPlusTreeLeafPage *recipient);
+
+  page_id_t next_page_id_;
+  MappingType array_[0];
 private:
   void CopyNFrom(MappingType *items, int size);
 
@@ -71,8 +84,8 @@ private:
 
   void CopyFirstFrom(const MappingType &item);
 
-  page_id_t next_page_id_;
-  MappingType array_[0];
+  
+  
 };
 
 #endif  // MINISQL_B_PLUS_TREE_LEAF_PAGE_H

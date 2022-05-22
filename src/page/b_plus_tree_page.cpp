@@ -10,7 +10,7 @@ bool BPlusTreePage::IsLeafPage() const {
 }
 
 bool BPlusTreePage::IsRootPage() const {
-  if(parent_page_id_ == 0) return true;
+  if(parent_page_id_ == INVALID_PAGE_ID) return true;
   return false;
 }
 
