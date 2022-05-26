@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <unordered_map>
-
+#include "record/field.h"
 #include "buffer/buffer_pool_manager.h"
 #include "catalog/indexes.h"
 #include "catalog/table.h"

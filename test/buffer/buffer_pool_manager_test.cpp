@@ -63,7 +63,10 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   page0 = bpm->FetchPage(0);
   EXPECT_EQ(0, memcmp(page0->GetData(), random_binary_data, PAGE_SIZE));
   EXPECT_EQ(true, bpm->UnpinPage(0, true));
-
+  bpm->FetchPage(2);
+  bpm->UnpinPage(2,false);
+  EXPECT_EQ(true,bpm->DeletePage(2));
+  EXPECT_EQ(true,bpm->IsPageFree(2));
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->Close();
   remove(db_name.c_str());

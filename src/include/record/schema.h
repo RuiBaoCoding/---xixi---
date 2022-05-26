@@ -4,7 +4,7 @@
 #include "common/macros.h"
 #include "glog/logging.h"
 #include "record/column.h"
-
+#include<iostream>
 #ifndef MINISQL_SCHEMA_H
 #define MINISQL_SCHEMA_H
 

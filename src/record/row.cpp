@@ -2,11 +2,11 @@
 
 uint32_t Row::SerializeTo(char *buf, Schema *schema) const {
   // replace with your code here
-  
   char *buffer = buf;
   int len = fields_.size();
   for(int i=0;i<len;i++){
-    auto tmp = this->fields_[i];//取出row中的每个Field指针
+    auto* tmp = this->fields_[i];//取出row中的每个Field指
+    // std::cout<<i<<std::endl;
     buffer+=tmp->SerializeTo(buffer);
   }
   return buffer-buf;

@@ -4,7 +4,6 @@
 #include <queue>
 #include <string>
 #include <vector>
-
 #include "page/b_plus_tree_internal_page.h"
 #include "page/b_plus_tree_leaf_page.h"
 #include "page/b_plus_tree_page.h"
