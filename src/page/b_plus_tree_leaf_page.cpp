@@ -42,32 +42,19 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
-  int s = GetSize();
-  //std::cout<<"s: "<<s<<std::endl;
-  //if(s==1) return 0;
-  //æ¯”ç??ä¸€ä¸?å°å°±åœ¨ç??0ä¸?ç»“ç‚¹
-  int i = 0;
-  for ( ; i < s ; i ++ ){
-    if (comparator(array_[i].first,key)>=0){
-      break;
+  int s = GetSize();//ÔªËØ¸öÊý
+  int left = 0;
+  int right = s - 1;
+  while (left <= right) {//[left,right]ÖÐ»¹ÓÐÔªËØ
+    int mid = (right + left) / 2;
+    if (comparator(key,KeyAt(mid))<=0) {  // Íù×ó±ßËÑ
+      right = mid - 1;
+    } else {  // ÍùÓÒ±ßËÑ
+      left = mid + 1;
     }
-  }
-  return i;
-  /*int left = 0, right = s;//äºŒåˆ†æ³•æœç´?key,å®žé™…èŒƒå›´ä¸?0åˆ?(s-1)
-  while(left<right){
-    int mid = (left+right)/2;
-    int t = comparator(key, array_[mid].first);
-    if(t<=0){
-      right = mid;
-    }else{
-      left=mid+1;
-    }
-    //cout<<"left: "<<left<<endl;
-    //cout<<"right: "<<right<<endl;
-  }
-  return right;*/
-  //åœ¨å¶ç»“ç‚¹ä¸?æŸ¥æ‰¾keyï¼Œè¿”å›žindexï¼ˆå?‚æžœæ‰¾ä¸ç€å°±è¿”å›žGetSize()ï¼?
-  //return array_[left].second;
+  }  // lower_bound
+  int ret = right + 1;
+  return ret;
   
   /*for(int i=1;i<GetSize();i++){
     if(comparator(array_[i].first,key)>=0) return i;
