@@ -98,15 +98,6 @@ private:
   explicit IndexInfo() : meta_data_{nullptr}, index_{nullptr}, table_info_{nullptr},
                          key_schema_{nullptr}, heap_(new SimpleMemHeap()) {}
 
-  // template <class KeyType, class ValueType, class KeyComparator>
-  // Index *CreateIndex(BufferPoolManager *buffer_pool_manager) {
-  //   index_id_t id = meta_data_->GetIndexId();
-  //   using INDEX_KEY_TYPE = GenericKey<32>;
-  //   using INDEX_COMPARATOR_TYPE = GenericComparator<32>;
-  //   using BP_TREE_INDEX = BPlusTreeIndex<INDEX_KEY_TYPE, RowId, INDEX_COMPARATOR_TYPE>;
-  //   auto *index = ALLOC(heap, BP_TREE_INDEX)(id, key_schema_,buffer_pool_manager);
-  //   return index;
-  // }
 
 private:
   IndexMetadata *meta_data_;

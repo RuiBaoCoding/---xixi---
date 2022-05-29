@@ -9,12 +9,15 @@ INDEX_TEMPLATE_ARGUMENTS
 BPLUSTREE_TYPE::BPlusTree(index_id_t index_id, BufferPoolManager *buffer_pool_manager, const KeyComparator &comparator,
                           int leaf_max_size, int internal_max_size)
         : index_id_(index_id),
-          root_page_id_(INVALID_PAGE_ID),
+          root_page_id_(-1),
           buffer_pool_manager_(buffer_pool_manager),
           comparator_(comparator),
           leaf_max_size_(leaf_max_size),
           internal_max_size_(internal_max_size) {
-
+  IndexRootsPage *rootrootpage=reinterpret_cast<IndexRootsPage*>(buffer_pool_manager_->FetchPage(INDEX_ROOTS_PAGE_ID));
+  page_id_t root_page_id;
+  bool flag = rootrootpage->GetRootId(index_id,&root_page_id);
+  if(flag==true) root_page_id_ = root_page_id;
 }
 
 INDEX_TEMPLATE_ARGUMENTS
