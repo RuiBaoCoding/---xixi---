@@ -3,6 +3,7 @@
 #include "glog/logging.h"
 #include "parser/syntax_tree_printer.h"
 #include "utils/tree_file_mgr.h"
+#include <time.h>
 
 extern "C" {
 int yyparse(void);
@@ -18,6 +19,7 @@ void InitGoogleLog(char *argv) {
 }
 
 void InputCommand(char *input, const int len) {
+  //将命令读入到input里，命令以分号结尾
   memset(input, 0, len);
   printf("minisql > ");
   int i = 0;
@@ -43,6 +45,7 @@ int main(int argc, char **argv) {
   while (1) {
     // read from buffer
     InputCommand(cmd, buf_size);
+    //cmd存储的是SQL语句
     // create buffer for sql input
     YY_BUFFER_STATE bp = yy_scan_string(cmd);
     if (bp == nullptr) {
@@ -62,15 +65,21 @@ int main(int argc, char **argv) {
       // error
       printf("%s\n", MinisqlParserGetErrorMessage());
     } else {
-#ifdef ENABLE_PARSER_DEBUG
-      printf("[INFO] Sql syntax parse ok!\n");
+//#ifdef ENABLE_PARSER_DEBUG
+      //printf("[INFO] Sql syntax parse ok!\n");
       SyntaxTreePrinter printer(MinisqlGetParserRootNode());
       printer.PrintTree(syntax_tree_file_mgr[syntax_tree_id++]);
-#endif
+//#endif
     }
 
     ExecuteContext context;
+    clock_t start,end;
+    start=clock();//开始计时
+
     engine.Execute(MinisqlGetParserRootNode(), &context);
+
+    end=clock();
+    std::cout<<"The SQL Statement Takes "<<double(end-start)/CLOCKS_PER_SEC<<"s to Execute."<<endl;
     sleep(1);
 
     // clean memory after parse
