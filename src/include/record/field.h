@@ -2,7 +2,7 @@
 #define MINISQL_FIELD_H
 
 #include <cstring>
-
+#include <iostream>
 #include "common/config.h"
 #include "common/macros.h"
 #include "record/types.h"
@@ -137,7 +137,16 @@ public:
     std::swap(first.is_null_, second.is_null_);
     std::swap(first.manage_data_, second.manage_data_);
   }
-
+  void fprint(){
+    if(type_id_ == kTypeFloat) std::cout<<value_.float_;
+    else if(type_id_ == kTypeInt) std::cout<<value_.integer_;
+    else{ 
+      char o[len_+1];
+      memcpy(o,value_.chars_,len_);
+      o[len_] = '\0';
+      std::cout<<o;
+      }
+  }
 protected:
   union Val {
     int32_t integer_;
