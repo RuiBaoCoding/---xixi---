@@ -724,10 +724,13 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
       col = col->next_;
     }
   }
+  cout<<"--------------------"<<endl;
+  cout<<endl;
   for(auto i:columns){
     cout<<tableinfo->GetSchema()->GetColumn(i)->GetName()<<"   ";
   }
   cout<<endl;
+  cout<<"--------------------"<<endl;
   if(range->next_->next_==nullptr)//û��ѡ������
   {
     int cnt=0;
