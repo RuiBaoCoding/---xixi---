@@ -125,19 +125,19 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
 #endif
   string table_name = ast->child_->val_;
   //cout<<"table_name:"<<table_name<<endl;
-  pSyntaxNode column_pointer= ast->child_->next_->child_;//锟斤拷一锟斤拷锟斤拷锟皆讹拷应锟斤拷指锟斤拷
+  pSyntaxNode column_pointer= ast->child_->next_->child_;//第一个属性对应的指针
   vector<Column*>vec_col;
   while(column_pointer!=nullptr&&column_pointer->type_==kNodeColumnDefinition){
-    //锟斤拷锟侥猴拷锟斤拷 锟角憋拷锟斤拷锟斤拷锟斤拷锟斤拷息
+    //它的孩子 是表的属性信息
     //cout<<"---------------"<<endl;
     bool is_unique = false;
     if (column_pointer->val_!=nullptr){
       string s = column_pointer->val_;
       is_unique = (s=="unique");
     }
-    string column_name = column_pointer->child_->val_;//锟斤拷锟斤拷锟斤拷锟斤拷
+    string column_name = column_pointer->child_->val_;//属性名字
     //cout<<"column_name:"<<column_name<<endl;
-    string column_type = column_pointer->child_->next_->val_;//锟斤拷锟斤拷锟斤拷锟斤拷
+    string column_type = column_pointer->child_->next_->val_;//属性类型
     //cout<<"column_type:"<<column_type<<endl;
     int cnt = 0;
     Column *now;
@@ -171,7 +171,7 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     column_pointer = column_pointer->next_;
     cnt++;
   }
-  //为primary key锟斤拷锟斤拷锟斤拷锟斤拷
+  //为primary key建立索引
   Schema *schema = new Schema(vec_col);
   TableInfo *table_info = nullptr;
   //cout<<"SUCCEED!"<<endl;
@@ -196,9 +196,18 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     cout<<"index_name:"<<index_name<<endl;
     current_catalog->CreateIndex(table_name,index_name,primary_keys,nullptr,indexinfo);
   }
+  //为unique属性建立索引
+  for (auto r = vec_col.begin() ; r != vec_col.end(); r ++ ){
+    if ((*r)->IsUnique()){
+      string unique_index_name = table_name + "_"+(*r)->GetName()+"_unique";
+      CatalogManager* current_catalog=current_db->catalog_mgr_;
+      vector <string>unique_attribute_name = {(*r)->GetName()};
+      IndexInfo* indexinfo=nullptr;
+      current_catalog->CreateIndex(table_name,unique_index_name,unique_attribute_name,nullptr,indexinfo);
+    }
+  }
   return IsCreate;
 }
-
 
 dberr_t ExecuteEngine::ExecuteDropTable(pSyntaxNode ast, ExecuteContext *context) {
 #ifdef ENABLE_EXECUTE_DEBUG
