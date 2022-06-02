@@ -6,10 +6,16 @@
 #include "common/dberr.h"
 #include "common/instance.h"
 #include "transaction/transaction.h"
+#include "parser/syntax_tree.h"
+
+vector<Row*> rec_sel(pSyntaxNode a, std::vector<Row*>& b, TableInfo* c);
 
 extern "C" {
+int yyparse(void);
+FILE *yyyin;
+#include "parser/minisql_lex.h"
 #include "parser/parser.h"
-};
+}
 
 /**
  * ExecuteContext stores all the context necessary to run in the execute engine
@@ -79,6 +85,7 @@ private:
 
   dberr_t ExecuteQuit(pSyntaxNode ast, ExecuteContext *context);
 
+  
 private:
   [[maybe_unused]] std::unordered_map<std::string, DBStorageEngine *> dbs_;  /** all opened databases */
   [[maybe_unused]] std::string current_db_;  /** current database */
