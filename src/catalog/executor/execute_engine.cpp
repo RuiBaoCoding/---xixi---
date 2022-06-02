@@ -246,21 +246,57 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteCreateIndex" << std::endl;
 #endif
+  string table_name = ast->child_->next_->val_;
+  CatalogManager* current_catalog=current_db->catalog_mgr_;
+  TableInfo *tableinfo = nullptr;
+  current_catalog->GetTable(table_name, tableinfo);
+  //可以知道需要建立索引的每个key的名字，通过名字来判断这些key是否unique，有一个不是就不能建立索引
+  pSyntaxNode key_name=ast->child_->next_->next_->child_;//这是第一个属性
+  for(;key_name!=nullptr;key_name=key_name->next_){
+    uint32_t key_index;//存这个是第几个
+    dberr_t IsIn = tableinfo->GetSchema()->GetColumnIndex(key_name->val_,key_index);
+    if (IsIn==DB_COLUMN_NAME_NOT_EXIST){
+      cout<<"Attribute "<<key_name->val_<<" Isn't in The Table!"<<endl;
+      return DB_FAILED;
+    }
+    const Column* ky=tableinfo->GetSchema()->GetColumn(key_index);
+    if(ky->IsUnique()==false){
+      cout<<"Can't Create Index On Non-unique Key!"<<endl;
+      return DB_FAILED;
+    }
+  }
   vector <string> index_keys;
   //锟矫碉拷index_key锟侥碉拷一锟斤拷锟斤拷锟?
   pSyntaxNode index_key=ast->child_->next_->next_->child_;
   for(;index_key!=nullptr;index_key=index_key->next_){
     index_keys.push_back(index_key->val_);
   }
-  CatalogManager* current_catalog=current_db->catalog_mgr_;
   IndexInfo* indexinfo=nullptr;
-  dberr_t IsCreate=current_catalog->CreateIndex(ast->child_->next_->val_
-    ,ast->child_->val_,index_keys,nullptr,indexinfo);
+  string index_name = ast->child_->val_;
+  dberr_t IsCreate=current_catalog->CreateIndex(table_name,index_name,index_keys,nullptr,indexinfo);
   if(IsCreate==DB_TABLE_NOT_EXIST){
     cout<<"Table Not Exist!"<<endl;
   }
   if(IsCreate==DB_INDEX_ALREADY_EXIST){
     cout<<"Index Already Exist!"<<endl;
+  }
+
+  TableHeap* tableheap = tableinfo->GetTableHeap();
+  vector<uint32_t>index_column_number;
+  for (auto r = index_keys.begin(); r != index_keys.end() ; r++ ){//遍历属性的名字
+    uint32_t index ;
+    tableinfo->GetSchema()->GetColumnIndex(*r,index);
+    index_column_number.push_back(index);
+  }
+  vector<Field>fields;
+  for (auto iter=tableheap->Begin(nullptr) ; iter!= tableheap->End(); iter++) {
+    Row &it_row = *iter;
+    vector<Field> index_fields;
+    for (auto m=index_column_number.begin();m!=index_column_number.end();m++){
+      index_fields.push_back(*(it_row.GetField(*m)));//得到该row对应索引属性的值
+    }
+    Row index_row(index_fields);
+    indexinfo->GetIndex()->InsertEntry(index_row,it_row.GetRowId(),nullptr);
   }
   return IsCreate;
   //return DB_FAILED;
@@ -979,7 +1015,7 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
   LOG(INFO) << "ExecuteExecfile" << std::endl;
 #endif
   string name = ast->child_->val_;
-  string file_name = "./"+name;
+  string file_name = "/mnt/e/---xixi---/sql_gen/"+name;
   //cout<<file_name;
   ifstream infile;
   infile.open(file_name.data());//Connect a file stream object to a file
