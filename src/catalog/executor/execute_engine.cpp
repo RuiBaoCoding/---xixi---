@@ -125,19 +125,19 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
 #endif
   string table_name = ast->child_->val_;
   //cout<<"table_name:"<<table_name<<endl;
-  pSyntaxNode column_pointer= ast->child_->next_->child_;//µÚÒ»¸öÊôÐÔ¶ÔÓ¦µÄÖ¸Õë
+  pSyntaxNode column_pointer= ast->child_->next_->child_;//ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ô¶ï¿½Ó¦ï¿½ï¿½Ö¸ï¿½ï¿½
   vector<Column*>vec_col;
   while(column_pointer!=nullptr&&column_pointer->type_==kNodeColumnDefinition){
-    //ËüµÄº¢×Ó ÊÇ±íµÄÊôÐÔÐÅÏ¢
+    //ï¿½ï¿½ï¿½Äºï¿½ï¿½ï¿½ ï¿½Ç±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
     //cout<<"---------------"<<endl;
     bool is_unique = false;
     if (column_pointer->val_!=nullptr){
       string s = column_pointer->val_;
       is_unique = (s=="unique");
     }
-    string column_name = column_pointer->child_->val_;//ÊôÐÔÃû×Ö
+    string column_name = column_pointer->child_->val_;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     //cout<<"column_name:"<<column_name<<endl;
-    string column_type = column_pointer->child_->next_->val_;//ÊôÐÔÀàÐÍ
+    string column_type = column_pointer->child_->next_->val_;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     //cout<<"column_type:"<<column_type<<endl;
     int cnt = 0;
     Column *now;
@@ -171,7 +171,7 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     column_pointer = column_pointer->next_;
     cnt++;
   }
-  //Îªprimary key½¨Á¢Ë÷Òý
+  //Îªprimary keyï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   Schema *schema = new Schema(vec_col);
   TableInfo *table_info = nullptr;
   //cout<<"SUCCEED!"<<endl;
@@ -196,7 +196,7 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     cout<<"index_name:"<<index_name<<endl;
     current_catalog->CreateIndex(table_name,index_name,primary_keys,nullptr,indexinfo);
   }
-  //ÎªuniqueÊôÐÔ½¨Á¢Ë÷Òý
+  //Îªuniqueï¿½ï¿½ï¿½Ô½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   for (auto r = vec_col.begin() ; r != vec_col.end(); r ++ ){
     if ((*r)->IsUnique()){
       string unique_index_name = table_name + "_"+(*r)->GetName()+"_unique";
@@ -250,10 +250,10 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
   CatalogManager* current_catalog=current_db->catalog_mgr_;
   TableInfo *tableinfo = nullptr;
   current_catalog->GetTable(table_name, tableinfo);
-  //¿ÉÒÔÖªµÀÐèÒª½¨Á¢Ë÷ÒýµÄÃ¿¸ökeyµÄÃû×Ö£¬Í¨¹ýÃû×ÖÀ´ÅÐ¶ÏÕâÐ©keyÊÇ·ñunique£¬ÓÐÒ»¸ö²»ÊÇ¾Í²»ÄÜ½¨Á¢Ë÷Òý
-  pSyntaxNode key_name=ast->child_->next_->next_->child_;//ÕâÊÇµÚÒ»¸öÊôÐÔ
+  //ï¿½ï¿½ï¿½ï¿½Öªï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½keyï¿½ï¿½ï¿½ï¿½ï¿½Ö£ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½Ð©keyï¿½Ç·ï¿½uniqueï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾Í²ï¿½ï¿½Ü½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+  pSyntaxNode key_name=ast->child_->next_->next_->child_;//ï¿½ï¿½ï¿½Çµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   for(;key_name!=nullptr;key_name=key_name->next_){
-    uint32_t key_index;//´æÕâ¸öÊÇµÚ¼¸¸ö
+    uint32_t key_index;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÇµÚ¼ï¿½ï¿½ï¿?
     dberr_t IsIn = tableinfo->GetSchema()->GetColumnIndex(key_name->val_,key_index);
     if (IsIn==DB_COLUMN_NAME_NOT_EXIST){
       cout<<"Attribute "<<key_name->val_<<" Isn't in The Table!"<<endl;
@@ -266,7 +266,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
     }
   }
   vector <string> index_keys;
-  //ï¿½Ãµï¿½index_keyï¿½Äµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿?
+  //ï¿½Ãµï¿½index_keyï¿½Äµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿??
   pSyntaxNode index_key=ast->child_->next_->next_->child_;
   for(;index_key!=nullptr;index_key=index_key->next_){
     index_keys.push_back(index_key->val_);
@@ -283,7 +283,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
 
   TableHeap* tableheap = tableinfo->GetTableHeap();
   vector<uint32_t>index_column_number;
-  for (auto r = index_keys.begin(); r != index_keys.end() ; r++ ){//±éÀúÊôÐÔµÄÃû×Ö
+  for (auto r = index_keys.begin(); r != index_keys.end() ; r++ ){//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ï¿½ï¿½ï¿½
     uint32_t index ;
     tableinfo->GetSchema()->GetColumnIndex(*r,index);
     index_column_number.push_back(index);
@@ -293,7 +293,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
     Row &it_row = *iter;
     vector<Field> index_fields;
     for (auto m=index_column_number.begin();m!=index_column_number.end();m++){
-      index_fields.push_back(*(it_row.GetField(*m)));//µÃµ½¸Ãrow¶ÔÓ¦Ë÷ÒýÊôÐÔµÄÖµ
+      index_fields.push_back(*(it_row.GetField(*m)));//ï¿½Ãµï¿½ï¿½ï¿½rowï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½Öµ
     }
     Row index_row(index_fields);
     indexinfo->GetIndex()->InsertEntry(index_row,it_row.GetRowId(),nullptr);
@@ -306,7 +306,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteDropIndex" << std::endl;
 #endif
-  //ï¿½ï¿½ï¿½ï¿½index_nameï¿½Ç²ï¿½Ò»ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Ó·ï¿½ï¿½ï¿?
+  //ï¿½ï¿½ï¿½ï¿½index_nameï¿½Ç²ï¿½Ò»ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Ó·ï¿½ï¿½ï¿??
   //ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½
   vector<TableInfo* > tables;
   current_db->catalog_mgr_->GetTables(tables);
@@ -318,7 +318,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
     current_db->catalog_mgr_->GetTableIndexes((*p)->GetTableName(),indexes);
     string index_name=ast->child_->val_;
     for(auto q=indexes.begin();q<indexes.end();q++){
-      //ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í?ï¿½ï¿½É¾ï¿½ï¿½
+      //ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½?ï¿½ï¿½É¾ï¿½ï¿½
       if((*q)->GetIndexName()==index_name){
         dberr_t IsDrop=current_db->catalog_mgr_->DropIndex((*p)->GetTableName(),index_name);
         if(IsDrop==DB_TABLE_NOT_EXIST){
@@ -331,24 +331,24 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
       }
     }
   }
-  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï»¹Ã»ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½Ã»ï¿½Òµï¿½ï¿½ï¿½Ã»ï¿½ï¿½É¾ï¿½ï¿½ï¿½É¹ï¿?
+  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï»¹Ã»ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½Ã»ï¿½Òµï¿½ï¿½ï¿½Ã»ï¿½ï¿½É¾ï¿½ï¿½ï¿½É¹ï¿??
   cout<<"Index Not Found!"<<endl;
   return DB_FAILED;
 }
 
-vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
+vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, CatalogManager* c){
   if(sn == nullptr) return r;
   if(sn->type_ == kNodeConnector){
     
     vector<Row*> ans;
     if(strcmp(sn->val_,"and") == 0){
-      auto r1 = rec_sel(sn->child_,r,t);
-      ans = rec_sel(sn->child_->next_,r1,t);
+      auto r1 = rec_sel(sn->child_,r,t,c);
+      ans = rec_sel(sn->child_->next_,r1,t,c);
       return ans;
     }
     else if(strcmp(sn->val_,"or") == 0){
-      auto r1 = rec_sel(sn->child_,r,t);
-      auto r2 = rec_sel(sn->child_->next_,r,t);
+      auto r1 = rec_sel(sn->child_,r,t,c);
+      auto r2 = rec_sel(sn->child_->next_,r,t,c);
       for(uint32_t i=0;i<r1.size();i++){
         ans.push_back(r1[i]);        
       }
@@ -371,9 +371,9 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
     }
   }
   if(sn->type_ == kNodeCompareOperator){
-    string op = sn->val_;
-    string col_name = sn->child_->val_;
-    string val = sn->child_->next_->val_;
+    string op = sn->val_;//operation type
+    string col_name = sn->child_->val_;//column name
+    string val = sn->child_->next_->val_;//compare value
     uint32_t keymap;
     vector<Row*> ans;
     if(t->GetSchema()->GetColumnIndex(col_name, keymap)!=DB_SUCCESS){
@@ -382,11 +382,36 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
     }
     const Column* key_col = t->GetSchema()->GetColumn(keymap);
     TypeId type =  key_col->GetType();
+
     if(op == "="){
       if(type==kTypeInt)
       {  
         int valint = std::stoi(val);
         Field benchmk(type,int(valint));
+        vector<Field> vect_benchmk;
+        vect_benchmk.push_back(benchmk);
+
+        vector <IndexInfo*> indexes;
+        c->GetTableIndexes(t->GetTableName(),indexes);
+        for(auto p=indexes.begin();p<indexes.end();p++){
+            if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
+              if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
+                cout<<"--select using index--"<<endl;
+                Row tmp_row(vect_benchmk);
+                vector<RowId> result;
+                (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
+                for(auto q:result){
+                  if(q.GetPageId()<0) continue;
+                  Row *tr = new Row(q);
+                  t->GetTableHeap()->GetTuple(tr,nullptr);
+                  ans.push_back(tr);
+                }
+                return ans;
+              }
+            }
+        }   
+
+        
         for(uint32_t i=0;i<r.size();i++){
           if(!r[i]->GetField(keymap)->CheckComparable(benchmk)){
             cout<<"not comparable"<<endl;
@@ -417,6 +442,53 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
         char* ch = new char[key_col->GetLength()+2];
         strcpy(ch,val.c_str());//input compare object
         // cout<<"ch "<<sizeof(ch)<<endl;
+
+        Field benchmk(kTypeChar,ch,key_col->GetLength(),true);
+        vector<Field> vect_benchmk;
+        vect_benchmk.push_back(benchmk);
+
+        vector <IndexInfo*> indexes;
+        c->GetTableIndexes(t->GetTableName(),indexes);
+        for(auto p=indexes.begin();p<indexes.end();p++){
+            if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
+              if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
+                
+                for(uint32_t i=0;i<r.size();i++){
+                  const char* test = r[i]->GetField(keymap)->GetData();
+                  // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
+                  int eq=1;
+                  for(uint32_t q = 0;q<sizeof(test)+2;q++){
+                    if(test[q]!=ch[q]) eq=0;
+                  }
+                  // string ts = test;
+                  if(eq==1){
+                    vector<Field> f;
+                    for(auto it:r[i]->GetFields()){
+                      f.push_back(*it);
+                    }
+                    Row* tr = new Row(*r[i]);
+                    ans.push_back(tr);
+                    break;
+                  }
+                }
+
+                // cout<<"--select using index--"<<endl;
+                // Row tmp_row(vect_benchmk);
+                // vector<RowId> result;
+                // (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
+                // cout<<"find num "<<result.size()<<endl;
+                // for(auto q:result){
+                //   if(q.GetPageId()<0) continue;
+                //   cout<<"index found"<<endl;
+                //   Row *tr = new Row(q);
+                //   t->GetTableHeap()->GetTuple(tr,nullptr);
+                //   ans.push_back(tr);
+                // }
+                return ans;
+              }
+            }
+        } 
+
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
           // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
@@ -469,16 +541,9 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
       }
       else if(type==kTypeChar){
         char* ch = new char[key_col->GetLength()+2];
-        strcpy(ch,val.c_str());//ï¿½È½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½chï¿½ï¿½
+        strcpy(ch,val.c_str());
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
-          // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          // int eq=1;
-          // for(uint32_t q = 0;q<sizeof(test)+2;q++){
-          //   if(test[q]>ch[q]) {eq=0;break;}
-          // }
-          // string ts = test;
-          // if(eq==1){
           if(strcmp(test,ch)<0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
@@ -757,7 +822,7 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
       Row* tp = new Row(*it);
       origin_rows.push_back(tp);
     }    
-    auto ptr_rows  = rec_sel(cond, *&origin_rows,tableinfo);
+    auto ptr_rows  = rec_sel(cond, *&origin_rows,tableinfo,current_db->catalog_mgr_);
     
     for(auto it=ptr_rows.begin();it!=ptr_rows.end();it++){
       for(uint32_t j=0;j<columns.size();j++){
@@ -857,7 +922,7 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
       if(IsInsert==DB_FAILED){
         //ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
         cout<<"Insert Into Index Failed, Affects 0 Record!"<<endl;
-        //ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ö®Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½Ä¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ò´Ó±ï¿½ï¿½ï¿½É¾ï¿½ï¿?
+        //ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ö®Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½Ä¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ò´Ó±ï¿½ï¿½ï¿½É¾ï¿½ï¿??
         for(auto q=indexes.begin();q!=p;q++){
           (*q)->GetIndex()->RemoveEntry(row,row.GetRowId(),nullptr);
         }
@@ -867,7 +932,7 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
         cout<<"Insert Into Index Sccess"<<endl;
       }
     }
-    //È«ï¿½ï¿½ï¿½ï¿½ï¿½Ü²ï¿½ï¿½È¥ï¿½ï¿½ï¿½Ü³É¹ï¿½ï¿½ï¿½ï¿½ï¿?
+    //È«ï¿½ï¿½ï¿½ï¿½ï¿½Ü²ï¿½ï¿½È¥ï¿½ï¿½ï¿½Ü³É¹ï¿½ï¿½ï¿½ï¿½ï¿??
     cout<<"Insert Success, Affects 1 Record!"<<endl;
     return DB_SUCCESS;
   }
@@ -900,7 +965,7 @@ dberr_t ExecuteEngine::ExecuteDelete(pSyntaxNode ast, ExecuteContext *context) {
       Row* tp = new Row(*it);
       origin_rows.push_back(tp);
     }
-    tar  = rec_sel(del->next_->child_, *&origin_rows,tableinfo); 
+    tar  = rec_sel(del->next_->child_, *&origin_rows,tableinfo,current_db->catalog_mgr_); 
   }
   for(auto it:tar){
     tableheap->ApplyDelete(it->GetRowId(),nullptr);
@@ -952,11 +1017,11 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
       Row* tp = new Row(*it);
       origin_rows.push_back(tp);
     }
-    tar  = rec_sel(updates->next_->child_, *&origin_rows,tableinfo);
+    tar  = rec_sel(updates->next_->child_, *&origin_rows,tableinfo,current_db->catalog_mgr_);
     // cout<<"---- part "<<tar.size()<<" ----"<<endl;   
   }
   updates = updates->child_;
-  while(updates && updates->type_ == kNodeUpdateValue){//Ö±ï¿½ï¿½ï¿½Õ½ï¿½ï¿?
+  while(updates && updates->type_ == kNodeUpdateValue){//Ö±ï¿½ï¿½ï¿½Õ½ï¿½ï¿??
     string col = updates->child_->val_;
     string upval = updates->child_->next_->val_;
     uint32_t index;//ï¿½Òµï¿½colï¿½ï¿½Ó¦ï¿½ï¿½index

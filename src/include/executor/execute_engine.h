@@ -8,7 +8,7 @@
 #include "transaction/transaction.h"
 #include "parser/syntax_tree.h"
 
-vector<Row*> rec_sel(pSyntaxNode a, std::vector<Row*>& b, TableInfo* c);
+vector<Row*> rec_sel(pSyntaxNode a, std::vector<Row*>& b, TableInfo* c,CatalogManager* d);
 
 extern "C" {
 int yyparse(void);
