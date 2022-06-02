@@ -60,7 +60,7 @@ dberr_t ExecuteEngine::ExecuteCreateDatabase(pSyntaxNode ast, ExecuteContext *co
   LOG(INFO) << "ExecuteCreateDatabase" << std::endl;
 #endif
   DBStorageEngine* db = new DBStorageEngine(ast->child_->val_);
-  //·ÅÈëmapÓ³ÉäÀïÃæ
+  //ï¿½ï¿½ï¿½ï¿½mapÓ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   dbs_[ast->child_->val_]=db;
   //cout<<"ExecuteCreateDatabase SUCCESS!"<<endl;
   return DB_SUCCESS;
@@ -196,9 +196,18 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     cout<<"index_name:"<<index_name<<endl;
     current_catalog->CreateIndex(table_name,index_name,primary_keys,nullptr,indexinfo);
   }
+  //ÎªuniqueÊôÐÔ½¨Á¢Ë÷Òý
+  for (auto r = vec_col.begin() ; r != vec_col.end(); r ++ ){
+    if ((*r)->IsUnique()){
+      string unique_index_name = table_name + "_"+(*r)->GetName()+"_unique";
+      CatalogManager* current_catalog=current_db->catalog_mgr_;
+      vector <string>unique_attribute_name = {(*r)->GetName()};
+      IndexInfo* indexinfo=nullptr;
+      current_catalog->CreateIndex(table_name,unique_index_name,unique_attribute_name,nullptr,indexinfo);
+    }
+  }
   return IsCreate;
 }
-
 
 dberr_t ExecuteEngine::ExecuteDropTable(pSyntaxNode ast, ExecuteContext *context) {
 #ifdef ENABLE_EXECUTE_DEBUG
@@ -219,9 +228,9 @@ dberr_t ExecuteEngine::ExecuteShowIndexes(pSyntaxNode ast, ExecuteContext *conte
   cout<<"------Indexes------"<<endl;
   vector<TableInfo* > tables;
   current_db->catalog_mgr_->GetTables(tables);
-  //ÏÈ»ñµÃËùÓÐµÄ±í£¬È»ºó±éÀú±íµÃµ½Ã¿¸ö±íµÄË÷Òý
+  //ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ÐµÄ±ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   for(auto p=tables.begin();p<tables.end();p++){
-    //±éÀúÃ¿¸ö±í
+    //ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½
     cout<<"Indexes of Table "<<(*p)->GetTableName()<<":"<<endl;
     vector<IndexInfo*> indexes;
     current_db->catalog_mgr_->GetTableIndexes((*p)->GetTableName(),indexes);
@@ -238,7 +247,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
   LOG(INFO) << "ExecuteCreateIndex" << std::endl;
 #endif
   vector <string> index_keys;
-  //µÃµ½index_keyµÄµÚÒ»¸ö½áµã
+  //ï¿½Ãµï¿½index_keyï¿½Äµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿?
   pSyntaxNode index_key=ast->child_->next_->next_->child_;
   for(;index_key!=nullptr;index_key=index_key->next_){
     index_keys.push_back(index_key->val_);
@@ -261,19 +270,19 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteDropIndex" << std::endl;
 #endif
-  //¼ÙÉèindex_nameÊÇ²»Ò»ÑùµÄ£¬ÔòÎÒÃÇÕÒµ½Ò»¸öºó¾ÍÖ±½Ó·µ»Ø
-  //Èç¹ûÓÐ¶à¸öÔòº¯Êý·µ»ØÖµÎÞ·¨´¦Àí
+  //ï¿½ï¿½ï¿½ï¿½index_nameï¿½Ç²ï¿½Ò»ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ö±ï¿½Ó·ï¿½ï¿½ï¿?
+  //ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½Þ·ï¿½ï¿½ï¿½ï¿½ï¿½
   vector<TableInfo* > tables;
   current_db->catalog_mgr_->GetTables(tables);
-  //ÏÈ»ñµÃËùÓÐµÄ±í£¬È»ºó±éÀú±íµÃµ½Ã¿¸ö±íµÄË÷Òý
+  //ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ÐµÄ±ï¿½ï¿½ï¿½È»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   for(auto p=tables.begin();p<tables.end();p++){
-    //±éÀúÃ¿¸ö±í
+    //ï¿½ï¿½ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½
     //cout<<"Indexes of Table "<<(*p)->GetTableName()<<":"<<endl;
     vector<IndexInfo*> indexes;
     current_db->catalog_mgr_->GetTableIndexes((*p)->GetTableName(),indexes);
     string index_name=ast->child_->val_;
     for(auto q=indexes.begin();q<indexes.end();q++){
-      //ÅÐ¶ÏÈç¹ûÏàÍ¬¾ÍÉ¾³ý
+      //ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í?ï¿½ï¿½É¾ï¿½ï¿½
       if((*q)->GetIndexName()==index_name){
         dberr_t IsDrop=current_db->catalog_mgr_->DropIndex((*p)->GetTableName(),index_name);
         if(IsDrop==DB_TABLE_NOT_EXIST){
@@ -286,7 +295,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
       }
     }
   }
-  //Èç¹ûµ½ÕâÀï»¹Ã»·µ»ØËµÃ÷Ã»ÕÒµ½£¬Ã»ÓÐÉ¾³ý³É¹¦
+  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï»¹Ã»ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½Ã»ï¿½Òµï¿½ï¿½ï¿½Ã»ï¿½ï¿½É¾ï¿½ï¿½ï¿½É¹ï¿?
   cout<<"Index Not Found!"<<endl;
   return DB_FAILED;
 }
@@ -308,7 +317,7 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
         ans.push_back(r1[i]);        
       }
       for(uint32_t i=0;i<r2.size();i++){
-        int flag=1;//Ã»ÓÐÖØ¸´
+        int flag=1;//Ã»ï¿½ï¿½ï¿½Ø¸ï¿½
         for(uint32_t j=0;j<r1.size();j++){
           int f=1;
           for(uint32_t k=0;k<r1[i]->GetFieldCount();k++){
@@ -317,7 +326,7 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
             }
           }
           if(f==1){
-            flag=0;//ÓÐÖØ¸´
+            flag=0;//ï¿½ï¿½ï¿½Ø¸ï¿½
             break;}
         }
         if(flag==1) ans.push_back(r2[i]);        
@@ -369,14 +378,14 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
         }
       }
       else if(type==kTypeChar){
-        char* ch = new char[key_col->GetLength()];
-        strcpy(ch,val.c_str());//±È½ÏÄ¿±ê´æÈëchÖÐ
-
+        char* ch = new char[key_col->GetLength()+2];
+        strcpy(ch,val.c_str());//input compare object
+        // cout<<"ch "<<sizeof(ch)<<endl;
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
           // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
           int eq=1;
-          for(uint32_t q = 0;q<sizeof(test);q++){
+          for(uint32_t q = 0;q<sizeof(test)+2;q++){
             if(test[q]!=ch[q]) eq=0;
           }
           // string ts = test;
@@ -423,18 +432,18 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
         }
       }
       else if(type==kTypeChar){
-        char* ch = new char[key_col->GetLength()];
-        strcpy(ch,val.c_str());//±È½ÏÄ¿±ê´æÈëchÖÐ
-
+        char* ch = new char[key_col->GetLength()+2];
+        strcpy(ch,val.c_str());//ï¿½È½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½chï¿½ï¿½
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
           // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          int eq=1;
-          for(uint32_t q = 0;q<sizeof(test);q++){
-            if(test[q]>ch[q]) {eq=0;break;}
-          }
+          // int eq=1;
+          // for(uint32_t q = 0;q<sizeof(test)+2;q++){
+          //   if(test[q]>ch[q]) {eq=0;break;}
+          // }
           // string ts = test;
-          if(eq==1){
+          // if(eq==1){
+          if(strcmp(test,ch)<0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
               f.push_back(*it);
@@ -478,17 +487,12 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
       }
       else if(type==kTypeChar){
         char* ch = new char[key_col->GetLength()];
-        strcpy(ch,val.c_str());//±È½ÏÄ¿±ê´æÈëchÖÐ
+        strcpy(ch,val.c_str());//ï¿½È½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½chï¿½ï¿½
 
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
-          // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          int eq=1;
-          for(uint32_t q = 0;q<sizeof(test);q++){
-            if(test[q]<ch[q]) {eq=0;break;}
-          }
-          // string ts = test;
-          if(eq==1){
+          
+          if(strcmp(test,ch)>0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
               f.push_back(*it);
@@ -532,17 +536,12 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
       }
       else if(type==kTypeChar){
         char* ch = new char[key_col->GetLength()];
-        strcpy(ch,val.c_str());//±È½ÏÄ¿±ê´æÈëchÖÐ
+        strcpy(ch,val.c_str());//ï¿½È½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½chï¿½ï¿½
 
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
-          // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          int eq=1;
-          for(uint32_t q = 0;q<sizeof(test);q++){
-            if(test[q]>ch[q]) {eq=0;break;}
-          }
-          // string ts = test;
-          if(eq==1){
+          
+          if(strcmp(test,ch)<=0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
               f.push_back(*it);
@@ -586,17 +585,12 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
       }
       else if(type==kTypeChar){
         char* ch = new char[key_col->GetLength()];
-        strcpy(ch,val.c_str());//±È½ÏÄ¿±ê´æÈëchÖÐ
+        strcpy(ch,val.c_str());//ï¿½È½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½chï¿½ï¿½
 
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
-          // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          int eq=1;
-          for(uint32_t q = 0;q<sizeof(test);q++){
-            if(test[q]<ch[q]) {eq=0;break;}
-          }
-          // string ts = test;
-          if(eq==1){
+        
+          if(strcmp(test,ch)>=0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
               f.push_back(*it);
@@ -640,17 +634,12 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t){
       }
       else if(type==kTypeChar){
         char* ch = new char[key_col->GetLength()];
-        strcpy(ch,val.c_str());//±È½ÏÄ¿±ê´æÈëchÖÐ
+        strcpy(ch,val.c_str());//ï¿½È½ï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½chï¿½ï¿½
 
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
-          // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          int eq=1;
-          for(uint32_t q = 0;q<sizeof(test);q++){
-            if(test[q]!=ch[q]) {eq=0;break;}
-          }
-          // string ts = test;
-          if(eq==0){
+          
+          if(strcmp(test,ch)!=0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
               f.push_back(*it);
@@ -680,7 +669,7 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
     return DB_FAILED;
   }
   if(range->type_ == kNodeAllColumns){
-    cout<<"select all"<<endl;
+    // cout<<"select all"<<endl;
     for(uint32_t i=0;i<tableinfo->GetSchema()->GetColumnCount();i++)
       columns.push_back(i);
   }
@@ -703,8 +692,9 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
     cout<<tableinfo->GetSchema()->GetColumn(i)->GetName()<<"   ";
   }
   cout<<endl;
-  if(range->next_->next_==nullptr)//Ã»ÓÐÑ¡ÔñÌõ¼þ
+  if(range->next_->next_==nullptr)//Ã»ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   {
+    int cnt=0;
     for(auto it=tableinfo->GetTableHeap()->Begin(nullptr);it!=tableinfo->GetTableHeap()->End();it++){
       for(uint32_t j=0;j<columns.size();j++){
         if(it->GetField(columns[j])->IsNull()){
@@ -716,7 +706,9 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
         
       }
       cout<<endl;
+      cnt++;
     }
+    cout<<"Select Success, Affects "<<cnt<<" Record!"<<endl;
     return DB_SUCCESS;
   }
   else if(range->next_->next_->type_ == kNodeConditions){
@@ -735,7 +727,9 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
       }
       cout<<endl;
     }
+    cout<<"Select Success, Affects "<<ptr_rows.size()<<" Record!"<<endl;
   }
+  
   return DB_SUCCESS;
 }
 
@@ -743,10 +737,10 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteInsert" << std::endl;
 #endif
-  //Ê×ÏÈµÃµ½±íÃû
+  //ï¿½ï¿½ï¿½ÈµÃµï¿½ï¿½ï¿½ï¿½ï¿½
   string table_name=ast->child_->val_;
-  //µÃµ½tableinfo*
-  //¹¹½¡Ò»¸öRow
+  //ï¿½Ãµï¿½tableinfo*
+  //ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Row
   TableInfo *tableinfo = nullptr;
   dberr_t GetRet = current_db->catalog_mgr_->GetTable(table_name, tableinfo);
   if (GetRet==DB_TABLE_NOT_EXIST){
@@ -754,7 +748,7 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
     return DB_FAILED;
   }
   vector<Field> fields;
-  pSyntaxNode column_pointer= ast->child_->next_->child_;//Í·Ö¸Õë
+  pSyntaxNode column_pointer= ast->child_->next_->child_;//Í·Ö¸ï¿½ï¿½
   int cnt = tableinfo->GetSchema()->GetColumnCount();
   // cout<<"cnt:"<<cnt<<endl;
   for ( int i = 0 ; i < cnt ; i ++ ){
@@ -774,17 +768,17 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
     }
     else{
       //cout<<"a number"<<endl;
-      if (now_type_id==kTypeInt){//ÕûÊý
+      if (now_type_id==kTypeInt){//ï¿½ï¿½ï¿½ï¿½
         int x = atoi(column_pointer->val_);
         Field new_field (now_type_id,x);
         fields.push_back(new_field);
       }
-      else if(now_type_id==kTypeFloat){//¸¡µãÊý
+      else if(now_type_id==kTypeFloat){//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         float f = atof(column_pointer->val_);
         Field new_field (now_type_id,f);
         fields.push_back(new_field);
       }
-      else {//×Ö·û´®
+      else {//ï¿½Ö·ï¿½ï¿½ï¿½
         string s = column_pointer->val_;
         Field new_field (now_type_id,column_pointer->val_,s.length(),true); 
         fields.push_back(new_field);
@@ -796,17 +790,17 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
     cout<<"Column Count doesn't match!"<<endl;
     return DB_FAILED;
   }
-  Row row(fields);//¹¹ÔìÒ»¸örow
-  //ÐÂ¹¹½¨µÄRow¶ÔÏóÃû×ÖÎªrow£¬RowIDÎªrowid
-  //µÃµ½±íÖÐµÄËùÓÐË÷Òý
+  Row row(fields);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½row
+  //ï¿½Â¹ï¿½ï¿½ï¿½ï¿½ï¿½Rowï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªrowï¿½ï¿½RowIDÎªrowid
+  //ï¿½Ãµï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   ASSERT(tableinfo!=nullptr,"TableInfo is Null!");
-  TableHeap* tableheap=tableinfo->GetTableHeap();//µÃµ½±í¶ÔÓ¦µÄÎÄ¼þ¶Ñ
+  TableHeap* tableheap=tableinfo->GetTableHeap();//ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½
   bool Is_Insert=tableheap->InsertTuple(row,nullptr);
   if(Is_Insert==false){
     cout<<"Insert Failed, Affects 0 Record!"<<endl;
     return DB_FAILED;
   }else{
-    vector <IndexInfo*> indexes;//´æ±íÖÐËùÓÐË÷ÒýµÄindexinfo
+    vector <IndexInfo*> indexes;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½indexinfo
     current_db->catalog_mgr_->GetTableIndexes(table_name,indexes);
 
     for(auto p=indexes.begin();p<indexes.end();p++){
@@ -822,9 +816,9 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
       dberr_t IsInsert=(*p)->GetIndex()->InsertEntry(index_row,row.GetRowId(),nullptr);
       //cout<<"RowID: "<<row.GetRowId().Get()<<endl;
       if(IsInsert==DB_FAILED){
-        //²åÈëÊ§°Ü
+        //ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
         cout<<"Insert Into Index Failed, Affects 0 Record!"<<endl;
-        //²åÈëÊ§°ÜÔòÐèÒª³·»ØÖ®Ç°ÔÚË÷ÒýÖÐ²åÈëµÄ¼ÇÂ¼£¬²¢ÇÒ´Ó±íÖÐÉ¾³ý
+        //ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ö®Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð²ï¿½ï¿½ï¿½Ä¼ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½Ò´Ó±ï¿½ï¿½ï¿½É¾ï¿½ï¿?
         for(auto q=indexes.begin();q!=p;q++){
           (*q)->GetIndex()->RemoveEntry(row,row.GetRowId(),nullptr);
         }
@@ -834,7 +828,7 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
         cout<<"Insert Into Index Sccess"<<endl;
       }
     }
-    //È«²¿¶¼ÄÜ²å½øÈ¥²ÅÄÜ³É¹¦²åÈë
+    //È«ï¿½ï¿½ï¿½ï¿½ï¿½Ü²ï¿½ï¿½È¥ï¿½ï¿½ï¿½Ü³É¹ï¿½ï¿½ï¿½ï¿½ï¿?
     cout<<"Insert Success, Affects 1 Record!"<<endl;
     return DB_SUCCESS;
   }
@@ -851,11 +845,11 @@ dberr_t ExecuteEngine::ExecuteDelete(pSyntaxNode ast, ExecuteContext *context) {
     cout<<"Table Not Exist!"<<endl;
     return DB_FAILED;
   }
-  TableHeap* tableheap=tableinfo->GetTableHeap();//µÃµ½±í¶ÔÓ¦µÄÎÄ¼þ¶Ñ
+  TableHeap* tableheap=tableinfo->GetTableHeap();//ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½
   auto del = ast->child_;
   vector<Row*> tar;
 
-  if(del->next_==nullptr){//»ñÈ¡·ûºÏÑ¡ÔñÌõ¼þµÄrow£¬´æÈëvector<Row*> tarÖÐ
+  if(del->next_==nullptr){//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rowï¿½ï¿½ï¿½ï¿½ï¿½ï¿½vector<Row*> tarï¿½ï¿½
     for(auto it=tableinfo->GetTableHeap()->Begin(nullptr);it!=tableinfo->GetTableHeap()->End();it++){
       Row* tp = new Row(*it);
       tar.push_back(tp);
@@ -873,7 +867,7 @@ dberr_t ExecuteEngine::ExecuteDelete(pSyntaxNode ast, ExecuteContext *context) {
     tableheap->ApplyDelete(it->GetRowId(),nullptr);
   }
   cout<<"Delete Success, Affects "<<tar.size()<<" Record!"<<endl;
-  vector <IndexInfo*> indexes;//´æ±íÖÐËùÓÐË÷ÒýµÄindexinfo
+  vector <IndexInfo*> indexes;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½indexinfo
   current_db->catalog_mgr_->GetTableIndexes(table_name,indexes);
   for(auto p=indexes.begin();p<indexes.end();p++){
     for(auto j:tar){
@@ -885,7 +879,7 @@ dberr_t ExecuteEngine::ExecuteDelete(pSyntaxNode ast, ExecuteContext *context) {
         }
       }
       Row index_row(index_fields);
-      (*p)->GetIndex()->RemoveEntry(*j,j->GetRowId(),nullptr);
+      (*p)->GetIndex()->RemoveEntry(index_row,j->GetRowId(),nullptr);
     }
   }
   return DB_SUCCESS;
@@ -902,11 +896,11 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
     cout<<"Table Not Exist!"<<endl;
     return DB_FAILED;
   }
-  TableHeap* tableheap=tableinfo->GetTableHeap();//µÃµ½±í¶ÔÓ¦µÄÎÄ¼þ¶Ñ
+  TableHeap* tableheap=tableinfo->GetTableHeap();//ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½
   auto updates = ast->child_->next_;
   vector<Row*> tar;
 
-  if(updates->next_==nullptr){//»ñÈ¡·ûºÏÑ¡ÔñÌõ¼þµÄrow£¬´æÈëvector<Row*> tarÖÐ
+  if(updates->next_==nullptr){//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½rowï¿½ï¿½ï¿½ï¿½ï¿½ï¿½vector<Row*> tarï¿½ï¿½
     for(auto it=tableinfo->GetTableHeap()->Begin(nullptr);it!=tableinfo->GetTableHeap()->End();it++){
       Row* tp = new Row(*it);
       tar.push_back(tp);
@@ -923,10 +917,10 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
     // cout<<"---- part "<<tar.size()<<" ----"<<endl;   
   }
   updates = updates->child_;
-  while(updates && updates->type_ == kNodeUpdateValue){//Ö±µ½¿Õ½áµã
+  while(updates && updates->type_ == kNodeUpdateValue){//Ö±ï¿½ï¿½ï¿½Õ½ï¿½ï¿?
     string col = updates->child_->val_;
     string upval = updates->child_->next_->val_;
-    uint32_t index;//ÕÒµ½col¶ÔÓ¦µÄindex
+    uint32_t index;//ï¿½Òµï¿½colï¿½ï¿½Ó¦ï¿½ï¿½index
     tableinfo->GetSchema()->GetColumnIndex(col,index);
     TypeId tid = tableinfo->GetSchema()->GetColumn(index)->GetType();
     if(tid == kTypeInt){
@@ -955,6 +949,7 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
   for(auto it:tar){
     tableheap->UpdateTuple(*it,it->GetRowId(),nullptr);
   }
+  cout<<"Update Success, Affects "<<tar.size()<<" Record!"<<endl;
   return DB_SUCCESS;
 }
 
