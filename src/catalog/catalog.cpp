@@ -184,7 +184,7 @@ dberr_t CatalogManager::CreateTable(const string &table_name, TableSchema *schem
     p = buffer_pool_manager_->FetchPage(0)->GetData();
     memset(p, 0, PAGE_SIZE);
     memcpy(p,cmeta,len);
-    cout<<"CreatTable Success, <tid, pid> = "<<table_id<<", "<<page_id<<endl;
+    //cout<<"CreatTable Success, <tid, pid> = "<<table_id<<", "<<page_id<<endl;
     if(table_meta!=nullptr && table_heap!=nullptr)
       return DB_SUCCESS;
     return DB_FAILED;
@@ -253,7 +253,7 @@ dberr_t CatalogManager::CreateIndex(const std::string &table_name, const string 
     p = buffer_pool_manager_->FetchPage(0)->GetData();
     memset(p, 0, PAGE_SIZE);
     memcpy(p,cmeta,len);
-    cout<<"CreatIndex Success, <tid, pid> = "<<index_id<<", "<<page_id<<endl;
+    //cout<<"CreatIndex Success, <tid, pid> = "<<index_id<<", "<<page_id<<endl;
 
   return DB_SUCCESS;
 }

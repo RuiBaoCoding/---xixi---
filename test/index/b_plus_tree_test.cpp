@@ -1,3 +1,4 @@
+
 #include "common/instance.h"
 #include "gtest/gtest.h"
 #include "index/b_plus_tree.h"
@@ -38,7 +39,7 @@ TEST(BPlusTreeTests, SampleTest) {
   for (int i = 0; i < n; i++) {
     kv_map[keys[i]] = values[i];
   }
-  //Êä³öËæ»úÉú³ÉµÄÊý¾Ý
+  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½ï¿½
   /*cout<<"Insert:";
   for(int i = 0 ; i < n ; i ++ ){
     cout<<keys[i]<<",";
@@ -56,7 +57,7 @@ TEST(BPlusTreeTests, SampleTest) {
   cout<<endl;*/
   // Insert data
   for (int i = 0; i < n; i++) {
-    //cout<<"insert i: "<<i<<endl;
+    cout<<"insert i: "<<i<<endl;
     ASSERT_TRUE(tree.Insert(keys[i], values[i]));
   }
   ASSERT_TRUE(tree.Check());
@@ -84,6 +85,7 @@ TEST(BPlusTreeTests, SampleTest) {
     cout<<"--------------------------"<<endl;*/
     tree.Remove(delete_seq[i]);
   }
+  /*
   vector <page_id_t> pages;
   pages={21,
       9,20,
@@ -92,7 +94,7 @@ TEST(BPlusTreeTests, SampleTest) {
   cout<<"*********************Page Print*************************"<<endl;
   for (auto m = pages.begin();m!=pages.end();m++){
     tree.Print(*m);
-  }
+  }*/
   tree.PrintTree(mgr[1]);
   // Check valid
   

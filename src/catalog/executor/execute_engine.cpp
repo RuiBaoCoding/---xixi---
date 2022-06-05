@@ -181,19 +181,19 @@ dberr_t ExecuteEngine::ExecuteCreateTable(pSyntaxNode ast, ExecuteContext *conte
     return IsCreate;
   }
   if (column_pointer!=nullptr){
-    cout<<"It has primary key!"<<endl;
+    //cout<<"It has primary key!"<<endl;
     pSyntaxNode key_pointer = column_pointer->child_;
     vector <string>primary_keys;
     while(key_pointer!=nullptr){
       string key_name = key_pointer->val_ ;
-      cout<<"key_name:"<<key_name<<endl;
+      //cout<<"key_name:"<<key_name<<endl;
       primary_keys.push_back(key_name);
       key_pointer = key_pointer->next_;
     }
     CatalogManager* current_catalog=current_db->catalog_mgr_;
     IndexInfo* indexinfo=nullptr;
     string index_name = table_name + "_pk";
-    cout<<"index_name:"<<index_name<<endl;
+    //cout<<"index_name:"<<index_name<<endl;
     current_catalog->CreateIndex(table_name,index_name,primary_keys,nullptr,indexinfo);
   }
   //Ϊunique���Խ�������
@@ -253,7 +253,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
   //����֪����Ҫ����������ÿ��key�����֣�ͨ���������ж���Щkey�Ƿ�unique����һ�����ǾͲ��ܽ�������
   pSyntaxNode key_name=ast->child_->next_->next_->child_;//���ǵ�һ������
   for(;key_name!=nullptr;key_name=key_name->next_){
-    uint32_t key_index;//������ǵڼ���??
+    uint32_t key_index;//������ǵڼ���??
     dberr_t IsIn = tableinfo->GetSchema()->GetColumnIndex(key_name->val_,key_index);
     if (IsIn==DB_COLUMN_NAME_NOT_EXIST){
       cout<<"Attribute "<<key_name->val_<<" Isn't in The Table!"<<endl;
@@ -266,7 +266,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
     }
   }
   vector <string> index_keys;
-  //�õ�index_key�ĵ�һ�����???
+  //�õ�index_key�ĵ�һ�����???
   pSyntaxNode index_key=ast->child_->next_->next_->child_;
   for(;index_key!=nullptr;index_key=index_key->next_){
     index_keys.push_back(index_key->val_);
@@ -306,7 +306,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteDropIndex" << std::endl;
 #endif
-  //����index_name�ǲ�һ���ģ��������ҵ�һ�����ֱ�ӷ���???
+  //����index_name�ǲ�һ���ģ��������ҵ�һ�����ֱ�ӷ���???
   //����ж����������ֵ�޷�����
   vector<TableInfo* > tables;
   current_db->catalog_mgr_->GetTables(tables);
@@ -331,7 +331,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
       }
     }
   }
-  //��������ﻹû����˵��û�ҵ���û��ɾ���ɹ�???
+  //��������ﻹû����˵��û�ҵ���û��ɾ���ɹ�???
   cout<<"Index Not Found!"<<endl;
   return DB_FAILED;
 }
@@ -765,7 +765,7 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
     }
   }
   cout<<"--------------------"<<endl;
-  cout<<endl;
+  //cout<<endl;
   for(auto i:columns){
     cout<<tableinfo->GetSchema()->GetColumn(i)->GetName()<<"   ";
   }
@@ -874,20 +874,19 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
     cout<<"Column Count doesn't match!"<<endl;
     return DB_FAILED;
   }
-  Row row(fields);//����һ��row
-  //�¹�����Row��������Ϊrow��RowIDΪrowid
-  //�õ����е���������
+  Row row(fields);//构健一个row对象
   ASSERT(tableinfo!=nullptr,"TableInfo is Null!");
-  TableHeap* tableheap=tableinfo->GetTableHeap();//�õ�����Ӧ���ļ���
+  TableHeap* tableheap=tableinfo->GetTableHeap();//得到堆表管理权
   bool Is_Insert=tableheap->InsertTuple(row,nullptr);
   if(Is_Insert==false){
     cout<<"Insert Failed, Affects 0 Record!"<<endl;
     return DB_FAILED;
   }else{
-    vector <IndexInfo*> indexes;//���������������indexinfo
+    vector <IndexInfo*> indexes;//得到所有索引的TableInfo
     current_db->catalog_mgr_->GetTableIndexes(table_name,indexes);
 
     for(auto p=indexes.begin();p<indexes.end();p++){
+      //遍历所有的index
       IndexSchema* index_schema = (*p)->GetIndexKeySchema();
       vector<Field> index_fields;
       for(auto it:index_schema->GetColumns()){
@@ -900,19 +899,28 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
       dberr_t IsInsert=(*p)->GetIndex()->InsertEntry(index_row,row.GetRowId(),nullptr);
       //cout<<"RowID: "<<row.GetRowId().Get()<<endl;
       if(IsInsert==DB_FAILED){
-        //����ʧ��
-        cout<<"Insert Into Index Failed, Affects 0 Record!"<<endl;
-        //����ʧ������Ҫ����֮ǰ�������в���ļ�¼�����Ҵӱ���ɾ��???
+        //插入失败
+        cout<<"Insert Failed, Affects 0 Record!"<<endl;
+        //把前面插入过的全都撤销掉
         for(auto q=indexes.begin();q!=p;q++){
-          (*q)->GetIndex()->RemoveEntry(row,row.GetRowId(),nullptr);
+          IndexSchema* index_schema_already = (*q)->GetIndexKeySchema();
+          vector<Field> index_fields_already;
+          for(auto it:index_schema_already->GetColumns()){
+            index_id_t tmp_already;
+            if(tableinfo->GetSchema()->GetColumnIndex(it->GetName(),tmp_already)==DB_SUCCESS){
+              index_fields_already.push_back(fields[tmp_already]);
+            }
+          }
+          Row index_row_already(index_fields_already);
+          (*q)->GetIndex()->RemoveEntry(index_row_already,row.GetRowId(),nullptr);
         }
         tableheap->MarkDelete(row.GetRowId(),nullptr);
         return IsInsert;
       }else{
-        cout<<"Insert Into Index Sccess"<<endl;
+        //cout<<"Insert Into Index Sccess"<<endl;
       }
     }
-    //ȫ�����ܲ��ȥ���ܳɹ�����???
+    //ȫ�����ܲ��ȥ���ܳɹ�����???
     cout<<"Insert Success, Affects 1 Record!"<<endl;
     return DB_SUCCESS;
   }
@@ -1001,7 +1009,7 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
     // cout<<"---- part "<<tar.size()<<" ----"<<endl;   
   }
   updates = updates->child_;
-  while(updates && updates->type_ == kNodeUpdateValue){//ֱ���ս��???
+  while(updates && updates->type_ == kNodeUpdateValue){//ֱ���ս��???
     string col = updates->child_->val_;
     string upval = updates->child_->next_->val_;
     uint32_t index;//�ҵ�col��Ӧ��index
@@ -1063,7 +1071,7 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
   LOG(INFO) << "ExecuteExecfile" << std::endl;
 #endif
   string name = ast->child_->val_;
-  string file_name = "/mnt/e/---xixi---/sql_gen/"+name;
+  string file_name = "/mnt/e/Mini_SQL/sql_gen/"+name;
   //cout<<file_name;
   ifstream infile;
   infile.open(file_name.data());//Connect a file stream object to a file

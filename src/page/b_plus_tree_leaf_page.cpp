@@ -42,14 +42,14 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::SetNextPageId(page_id_t next_page_id) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_LEAF_PAGE_TYPE::KeyIndex(const KeyType &key, const KeyComparator &comparator) const {
-  int s = GetSize();//ÔªËØ¸öÊý
+  int s = GetSize();//Ôªï¿½Ø¸ï¿½ï¿½ï¿½
   int left = 0;
   int right = s - 1;
-  while (left <= right) {//[left,right]ÖÐ»¹ÓÐÔªËØ
+  while (left <= right) {//[left,right]ï¿½Ð»ï¿½ï¿½ï¿½Ôªï¿½ï¿½
     int mid = (right + left) / 2;
-    if (comparator(key,KeyAt(mid))<=0) {  // Íù×ó±ßËÑ
+    if (comparator(key,KeyAt(mid))<=0) {  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
       right = mid - 1;
-    } else {  // ÍùÓÒ±ßËÑ
+    } else {  // ï¿½ï¿½ï¿½Ò±ï¿½ï¿½ï¿½
       left = mid + 1;
     }
   }  // lower_bound
@@ -98,7 +98,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
     IncreaseSize(1);
     return 1;
   }
-  //æŸ¥æ‰¾ç¬?ä¸€ä¸?å¤§äºŽç­‰äºŽkeyçš„å€?
+  //æŸ¥æ‰¾ï¿½?ä¸€ï¿½?å¤§äºŽç­‰äºŽkeyçš„ï¿½?
   int pos = KeyIndex(key, comparator);
   //std::cout<<"pos: "<<pos<<std::endl;
   if(pos!=GetSize() && comparator(key, array_[pos].first)==0) return GetSize();
@@ -145,7 +145,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
 INDEX_TEMPLATE_ARGUMENTS
 bool B_PLUS_TREE_LEAF_PAGE_TYPE::Lookup(const KeyType &key, ValueType &value, const KeyComparator &comparator) const {
   int pos = KeyIndex(key, comparator);
-  cout<<"pos in Lookup:"<<pos<<endl;
+  //cout<<"pos in Lookup:"<<pos<<endl;
   if(pos!=GetSize() && comparator(array_[pos].first, key)==0){
     value = array_[pos].second;
     return true;

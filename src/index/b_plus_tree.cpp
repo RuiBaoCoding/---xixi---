@@ -15,9 +15,11 @@ BPLUSTREE_TYPE::BPlusTree(index_id_t index_id, BufferPoolManager *buffer_pool_ma
           leaf_max_size_(leaf_max_size),
           internal_max_size_(internal_max_size) {
   IndexRootsPage *rootrootpage=reinterpret_cast<IndexRootsPage*>(buffer_pool_manager_->FetchPage(INDEX_ROOTS_PAGE_ID));
+  ASSERT(rootrootpage!=nullptr,"rootrootpage is null!");
   page_id_t root_page_id;
   bool flag = rootrootpage->GetRootId(index_id,&root_page_id);
   if(flag==true) root_page_id_ = root_page_id;
+  buffer_pool_manager_->UnpinPage(INDEX_ROOTS_PAGE_ID,false);
 }
 
 INDEX_TEMPLATE_ARGUMENTS
@@ -50,6 +52,7 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> &result
   Page *page = FindLeafPage(key);
   LeafPage *leaf_page = reinterpret_cast<LeafPage *>(page->GetData());
   ValueType value;
+  ASSERT(leaf_page!=nullptr,"leaf_page is null!");
   bool ret = leaf_page->Lookup(key,value,comparator_);
   buffer_pool_manager_->UnpinPage(page->GetPageId(),false);//没有对该页进行修改，不是脏页
   result.push_back(value);
@@ -101,6 +104,7 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
   }else{
     root_page_id_=root_page_id;//更新root_page_id
     //新插入的结点其实是叶结点，将其转化为叶结点并初始化
+    ASSERT(root_page!=nullptr,"rootpage is null!");
     LeafPage *root_node=reinterpret_cast<LeafPage*>(root_page->GetData());
     root_node->Init(root_page_id,INVALID_PAGE_ID,leaf_max_size_);
     root_node->Insert(key,value,comparator_);
@@ -143,6 +147,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   //cout<<"already find leafpage"<<endl;
   LeafPage *leaf_page = reinterpret_cast<LeafPage *>(page->GetData());
   //调叶结点插入函数
+  ASSERT(leaf_page!=nullptr,"leafpage is null!");
   int bef_size = leaf_page->GetSize();
   int insert_size = leaf_page->Insert(key,value,comparator_);
 
@@ -163,6 +168,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     //需要分裂
     LeafPage* NewPage = Split(leaf_page);
     //cout<<"already split"<<endl;
+    ASSERT(NewPage!=nullptr,"newpage is null!");
     InsertIntoParent(leaf_page,NewPage->KeyAt(0),NewPage,transaction);
     //cout<<"already insert into parent"<<endl;
     buffer_pool_manager_->UnpinPage(page->GetPageId(),true);//unpin且设为脏页
@@ -197,6 +203,7 @@ N *BPLUSTREE_TYPE::Split(N *node) {
   //分裂结点并返回新建的结点
   //既可以是中间结点也可以是叶子结点
   //新建一个页
+  ASSERT(node!=nullptr,"node is null!");
   page_id_t new_page_id;//根结点的pageid
   Page *new_page=buffer_pool_manager_->NewPage(new_page_id);
   if(new_page==nullptr){
@@ -249,12 +256,14 @@ N *BPLUSTREE_TYPE::Split(N *node) {
 //old_node是左孩子，new_node是右孩子，key是他们的分界
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,Transaction *transaction) {
+  ASSERT(old_node!=nullptr,"oldpage is null!");
   page_id_t ParentPageId= old_node->GetParentPageId();
   if (ParentPageId==INVALID_PAGE_ID){//old_node原本是根节点
     //cout<<"old_node is root"<<endl;
     page_id_t NewRootPageId = INVALID_PAGE_ID;//新建一个根节点
     Page *page = buffer_pool_manager_->NewPage(NewRootPageId);
     InternalPage*New_Root_Page = reinterpret_cast<InternalPage *>(page->GetData());
+    ASSERT(new_node!=nullptr,"newpage is null!");
     //修改根节点的page_id
     root_page_id_=NewRootPageId;
     //把old_node和new_node的爸爸设置好
