@@ -82,12 +82,6 @@ Page *BufferPoolManager::NewPage(page_id_t &page_id) {
       disk_manager_->WritePage(pages_[tmp].GetPageId(),pages_[tmp].GetData());
     }
     page_table_.erase(pages_[tmp].page_id_);
-    // pages_[tmp].ResetMemory();
-    // pages_[tmp].page_id_ = page_id;
-    // page_table_[page_id] = tmp;
-    // free_list_.remove(tmp);
-    // replacer_->Pin(tmp);
-    // return &pages_[tmp];
   }
   pages_[tmp].ResetMemory();
   pages_[tmp].page_id_ = page_id;

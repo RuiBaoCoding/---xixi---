@@ -76,8 +76,8 @@ public:
     // cout<<"1"<<endl;
     index_id_t id = meta_data_->GetIndexId();
     // cout<<"2"<<endl;
-    using INDEX_KEY_TYPE = GenericKey<32>;
-    using INDEX_COMPARATOR_TYPE = GenericComparator<32>;
+    using INDEX_KEY_TYPE = GenericKey<64>;
+    using INDEX_COMPARATOR_TYPE = GenericComparator<64>;
     void* mem = heap_->Allocate(sizeof(BPlusTreeIndex<INDEX_KEY_TYPE, RowId, INDEX_COMPARATOR_TYPE>));
     Index *index = new(mem)BPlusTreeIndex<INDEX_KEY_TYPE, RowId, INDEX_COMPARATOR_TYPE>(id, key_schema_,buffer_pool_manager);
     // cout<<"3"<<endl;

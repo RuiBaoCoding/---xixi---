@@ -253,7 +253,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
   //����֪����Ҫ����������ÿ��key�����֣�ͨ���������ж���Щkey�Ƿ�unique����һ�����ǾͲ��ܽ�������
   pSyntaxNode key_name=ast->child_->next_->next_->child_;//���ǵ�һ������
   for(;key_name!=nullptr;key_name=key_name->next_){
-    uint32_t key_index;//������ǵڼ���?
+    uint32_t key_index;//������ǵڼ���??
     dberr_t IsIn = tableinfo->GetSchema()->GetColumnIndex(key_name->val_,key_index);
     if (IsIn==DB_COLUMN_NAME_NOT_EXIST){
       cout<<"Attribute "<<key_name->val_<<" Isn't in The Table!"<<endl;
@@ -266,7 +266,7 @@ dberr_t ExecuteEngine::ExecuteCreateIndex(pSyntaxNode ast, ExecuteContext *conte
     }
   }
   vector <string> index_keys;
-  //�õ�index_key�ĵ�һ�����??
+  //�õ�index_key�ĵ�һ�����???
   pSyntaxNode index_key=ast->child_->next_->next_->child_;
   for(;index_key!=nullptr;index_key=index_key->next_){
     index_keys.push_back(index_key->val_);
@@ -306,7 +306,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
 #ifdef ENABLE_EXECUTE_DEBUG
   LOG(INFO) << "ExecuteDropIndex" << std::endl;
 #endif
-  //����index_name�ǲ�һ���ģ��������ҵ�һ�����ֱ�ӷ���??
+  //����index_name�ǲ�һ���ģ��������ҵ�һ�����ֱ�ӷ���???
   //����ж����������ֵ�޷�����
   vector<TableInfo* > tables;
   current_db->catalog_mgr_->GetTables(tables);
@@ -331,7 +331,7 @@ dberr_t ExecuteEngine::ExecuteDropIndex(pSyntaxNode ast, ExecuteContext *context
       }
     }
   }
-  //��������ﻹû����˵��û�ҵ���û��ɾ���ɹ�??
+  //��������ﻹû����˵��û�ҵ���û��ɾ���ɹ�???
   cout<<"Index Not Found!"<<endl;
   return DB_FAILED;
 }
@@ -410,8 +410,6 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
               }
             }
         }   
-
-        
         for(uint32_t i=0;i<r.size();i++){
           if(!r[i]->GetField(keymap)->CheckComparable(benchmk)){
             cout<<"not comparable"<<endl;
@@ -423,6 +421,7 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
           }
         }
       }
+      
       else if(type==kTypeFloat)
       {  
         float valfloat = std::stof(val);
@@ -438,12 +437,13 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
           }
         }
       }
+
       else if(type==kTypeChar){
-        char* ch = new char[key_col->GetLength()+2];
+        char *ch = new char[val.size()];
         strcpy(ch,val.c_str());//input compare object
         // cout<<"ch "<<sizeof(ch)<<endl;
-
-        Field benchmk(kTypeChar,ch,key_col->GetLength(),true);
+        Field benchmk = Field(TypeId::kTypeChar, const_cast<char *>(ch), val.size(), true);
+        // Field benchmk(kTypeChar,ch,key_col->GetLength(),true);
         vector<Field> vect_benchmk;
         vect_benchmk.push_back(benchmk);
 
@@ -453,37 +453,17 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
             if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
               if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
                 
-                for(uint32_t i=0;i<r.size();i++){
-                  const char* test = r[i]->GetField(keymap)->GetData();
-                  // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-                  int eq=1;
-                  for(uint32_t q = 0;q<sizeof(test)+2;q++){
-                    if(test[q]!=ch[q]) eq=0;
-                  }
-                  // string ts = test;
-                  if(eq==1){
-                    vector<Field> f;
-                    for(auto it:r[i]->GetFields()){
-                      f.push_back(*it);
-                    }
-                    Row* tr = new Row(*r[i]);
-                    ans.push_back(tr);
-                    break;
-                  }
+                cout<<"--select using index--"<<endl;
+                Row tmp_row(vect_benchmk);
+                vector<RowId> result;
+                (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
+                for(auto q:result){
+                  if(q.GetPageId()<0) continue;
+                  // cout<<"index found"<<endl;
+                  Row *tr = new Row(q);
+                  t->GetTableHeap()->GetTuple(tr,nullptr);
+                  ans.push_back(tr);
                 }
-
-                // cout<<"--select using index--"<<endl;
-                // Row tmp_row(vect_benchmk);
-                // vector<RowId> result;
-                // (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
-                // cout<<"find num "<<result.size()<<endl;
-                // for(auto q:result){
-                //   if(q.GetPageId()<0) continue;
-                //   cout<<"index found"<<endl;
-                //   Row *tr = new Row(q);
-                //   t->GetTableHeap()->GetTuple(tr,nullptr);
-                //   ans.push_back(tr);
-                // }
                 return ans;
               }
             }
@@ -491,13 +471,8 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
 
         for(uint32_t i=0;i<r.size();i++){
           const char* test = r[i]->GetField(keymap)->GetData();
-          // cout<<"tuple len "<<sizeof(test)<<" "<<test<<endl;
-          int eq=1;
-          for(uint32_t q = 0;q<sizeof(test)+2;q++){
-            if(test[q]!=ch[q]) eq=0;
-          }
-          // string ts = test;
-          if(eq==1){
+          
+          if(strcmp(test,ch)==0){
             vector<Field> f;
             for(auto it:r[i]->GetFields()){
               f.push_back(*it);
@@ -852,12 +827,12 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
     return DB_FAILED;
   }
   vector<Field> fields;
-  pSyntaxNode column_pointer= ast->child_->next_->child_;//ͷָ��
-  int cnt = tableinfo->GetSchema()->GetColumnCount();
+  pSyntaxNode column_pointer= ast->child_->next_->child_;//the head of inset values
+  int cnt = tableinfo->GetSchema()->GetColumnCount();// the number of columns
   // cout<<"cnt:"<<cnt<<endl;
   for ( int i = 0 ; i < cnt ; i ++ ){
     TypeId now_type_id = tableinfo->GetSchema()->GetColumn(i)->GetType();
-    if (column_pointer==nullptr){
+    if (column_pointer==nullptr){//tht end of all insert values
       for ( int j = i ; j < cnt ; j ++ ){
         //cout<<"has null!"<<endl;
         Field new_field(tableinfo->GetSchema()->GetColumn(j)->GetType());
@@ -884,7 +859,12 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
       }
       else {//�ַ���
         string s = column_pointer->val_;
-        Field new_field (now_type_id,column_pointer->val_,s.length(),true); 
+        // uint32_t len=tableinfo->GetSchema()->GetColumn(i)->GetLength();
+        // cout<<"insert char length "<<len<<endl;
+        char *c = new char[s.size()];
+        strcpy(c,s.c_str());
+        Field new_field = Field(TypeId::kTypeChar, const_cast<char *>(c), s.size(), true);
+        // Field new_field (now_type_id,c,len,true); 
         fields.push_back(new_field);
       }
     }
@@ -922,7 +902,7 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
       if(IsInsert==DB_FAILED){
         //����ʧ��
         cout<<"Insert Into Index Failed, Affects 0 Record!"<<endl;
-        //����ʧ������Ҫ����֮ǰ�������в���ļ�¼�����Ҵӱ���ɾ��??
+        //����ʧ������Ҫ����֮ǰ�������в���ļ�¼�����Ҵӱ���ɾ��???
         for(auto q=indexes.begin();q!=p;q++){
           (*q)->GetIndex()->RemoveEntry(row,row.GetRowId(),nullptr);
         }
@@ -932,7 +912,7 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
         cout<<"Insert Into Index Sccess"<<endl;
       }
     }
-    //ȫ�����ܲ��ȥ���ܳɹ�����??
+    //ȫ�����ܲ��ȥ���ܳɹ�����???
     cout<<"Insert Success, Affects 1 Record!"<<endl;
     return DB_SUCCESS;
   }
@@ -1021,7 +1001,7 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
     // cout<<"---- part "<<tar.size()<<" ----"<<endl;   
   }
   updates = updates->child_;
-  while(updates && updates->type_ == kNodeUpdateValue){//ֱ���ս��??
+  while(updates && updates->type_ == kNodeUpdateValue){//ֱ���ս��???
     string col = updates->child_->val_;
     string upval = updates->child_->next_->val_;
     uint32_t index;//�ҵ�col��Ӧ��index
