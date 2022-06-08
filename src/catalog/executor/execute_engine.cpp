@@ -2,6 +2,7 @@
 #include "glog/logging.h"
 #include <vector>
 #include <algorithm>
+#include<time.h>
 ExecuteEngine::ExecuteEngine() {
 
 }
@@ -396,7 +397,7 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
         for(auto p=indexes.begin();p<indexes.end();p++){
             if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
               if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
-                cout<<"--select using index--"<<endl;
+                // cout<<"--select using index--"<<endl;
                 Row tmp_row(vect_benchmk);
                 vector<RowId> result;
                 (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
@@ -453,10 +454,14 @@ vector<Row*> rec_sel(pSyntaxNode sn, std::vector<Row*>& r, TableInfo* t, Catalog
             if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
               if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
                 
-                cout<<"--select using index--"<<endl;
+                // cout<<"--select using index--"<<endl;
+                clock_t s,e;
+                s=clock();
                 Row tmp_row(vect_benchmk);
                 vector<RowId> result;
                 (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
+                e=clock();
+                cout<<"name index select takes "<<double(e-s)/CLOCKS_PER_SEC<<"s to Execute."<<endl;
                 for(auto q:result){
                   if(q.GetPageId()<0) continue;
                   // cout<<"index found"<<endl;
@@ -793,6 +798,80 @@ dberr_t ExecuteEngine::ExecuteSelect(pSyntaxNode ast, ExecuteContext *context) {
   else if(range->next_->next_->type_ == kNodeConditions){
     pSyntaxNode cond = range->next_->next_->child_;
     vector<Row*> origin_rows;
+    string op = cond->val_;
+    if(cond->type_ == kNodeCompareOperator && op == "="){
+      string col_name = cond->child_->val_;//column name
+      string val = cond->child_->next_->val_;//compare value
+      uint32_t keymap;
+      if(tableinfo->GetSchema()->GetColumnIndex(col_name, keymap)!=DB_SUCCESS){
+        cout<<"column not found"<<endl;
+	      return DB_SUCCESS;
+      }
+      const Column* key_col = tableinfo->GetSchema()->GetColumn(keymap);
+      TypeId type =  key_col->GetType();
+      if(type==kTypeInt)
+      {  
+        int valint = std::stoi(val);
+        Field benchmk(type,int(valint));
+        vector<Field> vect_benchmk;
+        vect_benchmk.push_back(benchmk);
+        vector <IndexInfo*> indexes;
+        
+        current_db->catalog_mgr_->GetTableIndexes(tableinfo->GetTableName(),indexes);
+        for(auto p=indexes.begin();p<indexes.end();p++){
+            if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
+              if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
+                cout<<"--select int using index--"<<endl;
+                Row tmp_row(vect_benchmk);
+                vector<RowId> result;
+                (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
+                for(auto q:result){
+                  if(q.GetPageId()<0) continue;
+                  Row *tr = new Row(q);
+                  tableinfo->GetTableHeap()->GetTuple(tr,nullptr);
+                    for(uint32_t j=0;j<columns.size();j++){
+                        tr->GetField(columns[j])->fprint();
+                        cout<<"  ";
+                    }
+                    cout<<endl;
+                }
+                return DB_SUCCESS;
+              }
+            }
+         }
+      }
+      else if(type==kTypeChar){
+        char *ch = new char[val.size()];
+        strcpy(ch,val.c_str());//input compare object
+        Field benchmk = Field(TypeId::kTypeChar, const_cast<char *>(ch), val.size(), true);
+        vector<Field> vect_benchmk;
+        vect_benchmk.push_back(benchmk);
+        vector <IndexInfo*> indexes;
+        
+        current_db->catalog_mgr_->GetTableIndexes(tableinfo->GetTableName(),indexes);
+        for(auto p=indexes.begin();p<indexes.end();p++){
+            if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
+              if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col_name){
+                cout<<"--select using char* index--"<<endl;
+                Row tmp_row(vect_benchmk);
+                vector<RowId> result;
+                (*p)->GetIndex()->ScanKey(tmp_row,result,nullptr);
+                for(auto q:result){
+                  if(q.GetPageId()<0) continue;
+                  Row *tr = new Row(q);
+                  tableinfo->GetTableHeap()->GetTuple(tr,nullptr);
+                    for(uint32_t j=0;j<columns.size();j++){
+                        tr->GetField(columns[j])->fprint();
+                        cout<<"  ";
+                    }
+                    cout<<endl;
+                }
+                return DB_SUCCESS;
+              }
+            }
+         }
+      }
+    }
     for(auto it=tableinfo->GetTableHeap()->Begin(nullptr);it!=tableinfo->GetTableHeap()->End();it++){
       Row* tp = new Row(*it);
       origin_rows.push_back(tp);
@@ -859,9 +938,9 @@ dberr_t ExecuteEngine::ExecuteInsert(pSyntaxNode ast, ExecuteContext *context) {
       }
       else {//�ַ���
         string s = column_pointer->val_;
-        // uint32_t len=tableinfo->GetSchema()->GetColumn(i)->GetLength();
+        uint32_t len=tableinfo->GetSchema()->GetColumn(i)->GetLength();
         // cout<<"insert char length "<<len<<endl;
-        char *c = new char[s.size()];
+        char *c = new char[len];
         strcpy(c,s.c_str());
         Field new_field = Field(TypeId::kTypeChar, const_cast<char *>(c), s.size(), true);
         // Field new_field (now_type_id,c,len,true); 
@@ -961,12 +1040,17 @@ dberr_t ExecuteEngine::ExecuteDelete(pSyntaxNode ast, ExecuteContext *context) {
   cout<<"Delete Success, Affects "<<tar.size()<<" Record!"<<endl;
   vector <IndexInfo*> indexes;//���������������indexinfo
   current_db->catalog_mgr_->GetTableIndexes(table_name,indexes);
-  for(auto p=indexes.begin();p<indexes.end();p++){
+  // int cnt=0;
+  for(auto p=indexes.begin();p!=indexes.end();p++){
+    // cout<<"++++ "<<cnt++<<" ++++"<<endl;
+    // int cnt1=0;
     for(auto j:tar){
       vector<Field> index_fields;
+      
       for(auto it:(*p)->GetIndexKeySchema()->GetColumns()){
         index_id_t tmp;
         if(tableinfo->GetSchema()->GetColumnIndex(it->GetName(),tmp)==DB_SUCCESS){
+          // cout<<cnt1++<<endl;
           index_fields.push_back(*j->GetField(tmp));
         }
       }
@@ -1009,6 +1093,27 @@ dberr_t ExecuteEngine::ExecuteUpdate(pSyntaxNode ast, ExecuteContext *context) {
     // cout<<"---- part "<<tar.size()<<" ----"<<endl;   
   }
   updates = updates->child_;
+  SyntaxNode* tmp_up = updates;
+  int flag=1;
+  vector <IndexInfo*> indexes;
+  current_db->catalog_mgr_->GetTableIndexes(tableinfo->GetTableName(),indexes);
+  while(tmp_up && tmp_up->type_ == kNodeUpdateValue){//ֱcheck if any index is being undated
+    string col = tmp_up->child_->val_;
+    for(auto p=indexes.begin();p<indexes.end();p++){
+      if((*p)->GetIndexKeySchema()->GetColumnCount()==1){
+        if((*p)->GetIndexKeySchema()->GetColumns()[0]->GetName()==col){
+          flag=0;
+          break;
+        }
+      }
+     }
+    tmp_up = tmp_up->next_;
+  }
+  if(flag==0){
+    cout<<"index cannot be updated!!"<<endl;
+    return DB_SUCCESS;
+  }
+
   while(updates && updates->type_ == kNodeUpdateValue){//ֱ���ս��???
     string col = updates->child_->val_;
     string upval = updates->child_->next_->val_;
@@ -1071,7 +1176,7 @@ dberr_t ExecuteEngine::ExecuteExecfile(pSyntaxNode ast, ExecuteContext *context)
   LOG(INFO) << "ExecuteExecfile" << std::endl;
 #endif
   string name = ast->child_->val_;
-  string file_name = "/mnt/e/Mini_SQL/sql_gen/"+name;
+  string file_name =name;
   //cout<<file_name;
   ifstream infile;
   infile.open(file_name.data());//Connect a file stream object to a file
